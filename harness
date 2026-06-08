@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# ai-autodev-harness CLI 런처. venv(.venv)가 있으면 자동 사용.
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PY="python3"
+[ -x "$HERE/.venv/bin/python" ] && PY="$HERE/.venv/bin/python"
+exec "$PY" "$HERE/tools/harness_cli.py" "$@"

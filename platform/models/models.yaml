@@ -1,0 +1,33 @@
+# 모델/API 키 추상화 (LiteLLM 기반). 논리적 역할 → 프로바이더/모델/ENV 참조.
+# 실행층: tools/lib/llm.py (점검: `harness models`). 키는 절대 평문 금지 — *_env 로 환경변수 참조만.
+# model 은 LiteLLM 유효 id. 키가 없으면 해당 역할은 '비활성'(임의 폴백 없음).
+# 의존성은 키/모델 명시 시에만 부착(설계 원칙).  (ARCHITECTURE §5, §9)
+roles:
+  planner:
+    provider: anthropic
+    model: claude-opus-4-8       # LiteLLM: anthropic/claude-opus-4-8
+    api_key_env: ANTHROPIC_API_KEY
+  coder:
+    provider: anthropic
+    model: claude-sonnet-4-6
+    api_key_env: ANTHROPIC_API_KEY
+  verifier:
+    provider: anthropic
+    model: claude-sonnet-4-6
+    api_key_env: ANTHROPIC_API_KEY
+  embedder:
+    provider: local         # 오프라인 가능. API로 교체 시 api_key_env 추가
+    model: bge-m3
+# 다른 프로바이더로 교체 예 (role 블록을 아래처럼):
+#   coder: { provider: openai, model: gpt-4o,            api_key_env: OPENAI_API_KEY }
+#   coder: { provider: gemini, model: gemini-1.5-pro,    api_key_env: GEMINI_API_KEY }
+#   coder: { provider: ollama, model: ollama/llama3 }   # 로컬 LLM, 키 불필요
+
+# 임베딩 백엔드 (로컬 기본). router/MCP 서버가 참조.
+#   HARNESS_EMBED_BACKEND=local|hash  (env 로 오버라이드)
+#   HARNESS_EMBED_MODEL=BAAI/bge-m3
+embedding:
+  backend: local          # local(bge-m3) | hash(오프라인 폴백/테스트)
+  model: BAAI/bge-m3
+  dim: 1024
+  store: sqlite-vec        # info/vector/store.db

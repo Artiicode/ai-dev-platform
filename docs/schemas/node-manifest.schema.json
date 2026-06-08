@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "node-manifest.schema.json",
+  "title": "Project Node Manifest",
+  "type": "object",
+  "required": ["node", "link"],
+  "properties": {
+    "node": {
+      "type": "object",
+      "required": ["name", "schema_version"],
+      "properties": {
+        "name": { "type": "string" },
+        "schema_version": { "type": "integer", "minimum": 1 },
+        "harness_min_version": { "type": "string" }
+      }
+    },
+    "link": {
+      "type": "object",
+      "required": ["type", "path"],
+      "properties": {
+        "type": { "enum": ["path", "git-submodule", "git-clone", "symlink"] },
+        "url": { "type": "string" },
+        "ref": { "type": "string" },
+        "path": { "type": "string", "default": "repo" },
+        "target": { "type": "string", "description": "link.type=symlink 대상 디렉토리(절대경로 권장; 상대경로는 노드 기준)" }
+      }
+    },
+    "bootstrap": {
+      "type": "object",
+      "properties": {
+        "package_managers": { "type": "array", "items": { "type": "string" } },
+        "setup": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "storage": {
+      "type": "object",
+      "properties": {
+        "md_max_chars": { "type": "integer" },
+        "vector_min_chars": { "type": "integer" }
+      }
+    }
+  }
+}

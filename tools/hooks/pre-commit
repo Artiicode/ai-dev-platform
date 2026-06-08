@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# ai-autodev-harness pre-commit — 노드 적합성 강제 (강제성 ① 보편층)
+# 설치: python tools/install_hooks.py  (git init 후)
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+PY="python3"; [ -x "$ROOT/.venv/bin/python" ] && PY="$ROOT/.venv/bin/python"
+
+# 스테이지된 변경에서 영향받은 노드 추출
+nodes=$(git diff --cached --name-only | grep -oE 'projects/[^/]+-node' | sort -u || true)
+[ -z "$nodes" ] && exit 0
+
+rc=0
+while IFS= read -r n; do
+  [ -z "$n" ] && continue
+  [ "$(basename "$n")" = "_template-node" ] && continue
+  "$PY" "$ROOT/tools/validate_node.py" "$ROOT/$n" || rc=1
+done <<< "$nodes"
+
+if [ "$rc" -ne 0 ]; then
+  echo "[pre-commit] 노드 검증 실패 — 커밋 거부. 위 ✗ 항목을 수정 후 재시도하세요." >&2
+  echo "             (우회가 꼭 필요하면 git commit --no-verify, 단 CI에서 다시 거부됨)" >&2
+fi
+exit $rc

@@ -1,0 +1,25 @@
+# secrets — 절대 커밋 금지
+.env
+*.key
+*.pem
+**/secrets/**
+**/credential*.local.*
+
+# 파이썬 venv (대용량 — 재생성 가능)
+.venv/
+
+# 파생물(재생성 가능) — 벡터 바이너리/임베딩
+**/info/vector/*.bin
+**/info/vector/*.faiss
+**/info/vector/*.lance/
+**/info/vector/*.db
+**/info/vector/*.db-journal
+
+# 상태/락
+**/state/lock.json
+
+# 일반
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/

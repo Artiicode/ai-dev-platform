@@ -1,0 +1,69 @@
+{
+  "$schema_note": "Retrieval manifest for AI agents. Resolve a topic to a document + section anchor, then fetch only that section.",
+  "doc": {
+    "title": "AI Harness Engineering — 학습 커리큘럼",
+    "file": "harness-curriculum.md",
+    "version": "0.1.0",
+    "last_updated": "2026-06-08",
+    "status": "living",
+    "audience": ["human", "ai-agent"]
+  },
+  "sections": [
+    {
+      "id": "how-to-use",
+      "anchor": "#how-to-use",
+      "title": "이 문서 사용법 (navigation)",
+      "status": "done",
+      "tags": ["navigation", "retrieval", "usage"],
+      "summary": "사람과 AI 에이전트 각각의 읽는 순서, 버저닝/status 규칙."
+    },
+    {
+      "id": "lesson-1-core-model",
+      "anchor": "#lesson-1-core-model",
+      "title": "핵심 멘탈 모델 — 하네스 = Context + Loop + Gate",
+      "status": "done",
+      "lesson": 1,
+      "tags": ["harness", "agent-loop", "mental-model", "definition"],
+      "summary": "하네스 정의, 6단계 동작 루프(Input→Context→Plan→Act→Observe→Verify→Done), 세 축 요약."
+    },
+    {
+      "id": "lesson-1-mapping",
+      "anchor": "#lesson-1-mapping",
+      "title": "개념 ↔ 실제 사례 ↔ 내 플랫폼 매핑",
+      "status": "done",
+      "lesson": 1,
+      "tags": ["mapping", "claude-code", "platform-design"],
+      "summary": "하네스 각 단계를 개념/Claude Code류 사례/사용자 플랫폼 요구사항에 대응. 정확도 경계 명시."
+    },
+    {
+      "id": "roadmap",
+      "anchor": "#roadmap",
+      "title": "roadmap — 다음에 채울 주제",
+      "status": "done",
+      "tags": ["roadmap", "planning"],
+      "summary": "예정 주제 A(Context 레이어) B(Loop 설계) C(서브에이전트) D(Verify/평가)."
+    },
+    {
+      "id": "glossary",
+      "anchor": "#glossary",
+      "title": "용어집",
+      "status": "done",
+      "tags": ["glossary", "terminology"],
+      "summary": "harness, agent loop, tool use, subagent, HITL, MCP, RAG 정의."
+    },
+    {
+      "id": "changelog",
+      "anchor": "#changelog",
+      "title": "changelog",
+      "status": "done",
+      "tags": ["versioning", "changelog"],
+      "summary": "문서 버전 이력."
+    }
+  ],
+  "planned_sections": [
+    { "id": "topic-context-layer", "title": "Context 레이어 (MCP / RAG / 임베딩)", "status": "planned" },
+    { "id": "topic-loop-design", "title": "Loop 설계", "status": "planned" },
+    { "id": "topic-subagents", "title": "서브에이전트", "status": "planned" },
+    { "id": "topic-verification", "title": "Verify / 평가", "status": "planned" }
+  ]
+}

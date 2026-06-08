@@ -1,0 +1,37 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ai-autodev-harness — web GUI</title>
+<style>
+ body{font:14px/1.5 system-ui,sans-serif;margin:0;background:#0f1115;color:#e6e6e6}
+ header{padding:10px 16px;background:#171a21;border-bottom:1px solid #2a2f3a}
+ main{display:grid;grid-template-columns:1fr 320px;gap:0;height:calc(100vh - 50px)}
+ #chat{display:flex;flex-direction:column;padding:16px;overflow:auto}
+ #log{flex:1;overflow:auto} .msg{margin:8px 0;padding:8px 12px;border-radius:8px;max-width:80%}
+ .u{background:#2b3a55;align-self:flex-end;margin-left:auto} .a{background:#1d2530}
+ .ctx{font-size:12px;color:#9aa;border-left:2px solid #3a4;padding-left:8px;margin-top:6px;white-space:pre-wrap}
+ #side{background:#12151c;border-left:1px solid #2a2f3a;padding:12px;overflow:auto;font-size:12px}
+ input,textarea,button{font:inherit} #q{flex:1;padding:8px;background:#0c0e12;color:#eee;border:1px solid #2a2f3a;border-radius:6px}
+ .row{display:flex;gap:8px;margin-top:8px} button{padding:8px 12px;background:#2b6;border:0;border-radius:6px;color:#031;cursor:pointer}
+ pre{white-space:pre-wrap;word-break:break-word}
+</style></head><body>
+<header><b>ai-autodev-harness</b> — web GUI (skeleton) · 동일 MCP 기판 재사용</header>
+<main>
+ <section id="chat"><div id="log"></div>
+   <div class="row"><input id="q" placeholder="질문 또는 검색어..." onkeydown="if(event.key==='Enter')chat()">
+   <button onclick="chat()">보내기</button></div></section>
+ <aside id="side"><h4>노드 정보</h4><pre id="info">로딩...</pre>
+   <h4>SQL</h4><div class="row"><input id="sql" placeholder="SELECT ..."><button onclick="q()">실행</button></div>
+   <pre id="sqlout"></pre></aside>
+</main>
+<script>
+const log=document.getElementById('log');
+function add(t,cls,ctx){const d=document.createElement('div');d.className='msg '+cls;d.textContent=t;
+  if(ctx){const c=document.createElement('div');c.className='ctx';c.textContent=ctx;d.appendChild(c);}log.appendChild(d);log.scrollTop=log.scrollHeight;}
+async function chat(){const q=document.getElementById('q');const m=q.value.trim();if(!m)return;q.value='';add(m,'u');
+  const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m})});
+  const j=await r.json();const ctx=(j.context||[]).map(h=>'• '+(h.doc_id||'')+': '+(h.text||'').slice(0,120)).join('\n');
+  add(j.answer||JSON.stringify(j),'a',ctx);}
+async function q(){const s=document.getElementById('sql').value;const r=await fetch('/api/query',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sql:s})});
+  document.getElementById('sqlout').textContent=JSON.stringify(await r.json(),null,1);}
+fetch('/api/info').then(r=>r.json()).then(j=>document.getElementById('info').textContent=JSON.stringify(j,null,1));
+</script></body></html>

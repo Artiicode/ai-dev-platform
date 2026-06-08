@@ -1,0 +1,34 @@
+schema_version: 1
+entries:
+- id: deploy_guide.html
+  store: vector
+  location: info/vector/store.db
+  source: data/update/deploy_guide.html
+  sha256: ebd29a83a265f7fd5d455dfa780b9cc1338a26bea3a61b71db24dd35f12c0d16
+  ingested_at: '2026-06-08T06:34:06.043028Z'
+  tool: router@0.2.0
+  supersedes: []
+- id: gripper_spec.docx
+  store: md
+  location: info/md/gripper_spec.md
+  source: data/update/gripper_spec.docx
+  sha256: f37d23945173b0a53072ba13a0a64be85388f62842c3f63a29d7521478a09c15
+  ingested_at: '2026-06-08T06:34:06.086557Z'
+  tool: router@0.2.0
+  supersedes: []
+- id: robot_poses.json
+  store: sql
+  location: info/db/robot_poses.sqlite::robot_poses
+  source: data/update/robot_poses.json
+  sha256: 113e520f4cb51e8526458e1ff5db2d1c3ce8e31426f05a4320748c7585b02c88
+  ingested_at: '2026-06-08T06:34:06.126872Z'
+  tool: router@0.2.0
+  supersedes: []
+- id: safety_label.png
+  store: md
+  location: info/md/safety_label.md
+  source: data/update/safety_label.png
+  sha256: 3dc66996e78e78801146381c5a22cfa2304523ff82de95ffe8e8f7ace34a4c9b
+  ingested_at: '2026-06-08T06:34:06.265295Z'
+  tool: router@0.2.0
+  supersedes: []

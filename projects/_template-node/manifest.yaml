@@ -1,0 +1,18 @@
+# 프로젝트 노드 manifest. /init-project 가 <project>-node/manifest.yaml 로 복제.
+# 스키마: docs/schemas/node-manifest.schema.json
+node:
+  name: REPLACE_ME           # 예: project_A
+  schema_version: 1
+  harness_min_version: 0.1.0
+link:
+  type: git-clone            # path | git-submodule | git-clone | symlink
+  url: git@github.com:org/REPLACE_ME.git
+  ref: main
+  path: repo
+  # symlink 시: target: /abs/path/to/existing/project  (대상 디렉토리가 존재해야 함)
+bootstrap:
+  package_managers: [pip]
+  setup: []                  # 예: ["pip install -e .", "npm ci"]
+storage:
+  md_max_chars: 8000
+  vector_min_chars: 8000
