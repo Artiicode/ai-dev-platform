@@ -15,6 +15,14 @@
 **/info/vector/*.db
 **/info/vector/*.db-journal
 
+# 진입 규칙 파일: 정본 AGENTS.md 만 추적. 나머지는 정본으로의 심링크(미추적,
+# `harness gen-rules`/`make ready`가 로컬 생성; 심링크 미지원 OS면 복제 폴백).
+CLAUDE.md
+GEMINI.md
+.cursorrules
+**/copilot-instructions.md
+**/.cursor/rules/workspace.mdc
+
 # 상태/락
 **/state/lock.json
 

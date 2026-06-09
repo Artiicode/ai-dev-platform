@@ -14,9 +14,8 @@ jobs:
         run: pip install pyyaml jsonschema
       - name: 노드 적합성 검증
         run: python tools/validate_node.py --strict
-      - name: 진입 규칙 파일 최신화 확인
+      - name: 진입 규칙 정본(AGENTS.md) 최신화 확인
         run: |
           python tools/gen_agent_rules.py
-          git diff --exit-code -- CLAUDE.md AGENTS.md GEMINI.md .cursorrules \
-            .github/copilot-instructions.md .cursor/rules/workspace.mdc \
-            || { echo "::error::진입 규칙 파일이 오래됨 — 'python tools/gen_agent_rules.py' 후 커밋하세요."; exit 1; }
+          git diff --exit-code -- AGENTS.md \
+            || { echo "::error::AGENTS.md 정본이 오래됨 — 'python tools/gen_agent_rules.py' 후 커밋하세요."; exit 1; }

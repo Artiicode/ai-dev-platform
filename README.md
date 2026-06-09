@@ -33,7 +33,9 @@ make ready              # 멱등: venv+의존성 + git훅 + 벡터 재생성(arc
 source .venv/bin/activate
 # 오프라인이면:  HARNESS_EMBED_BACKEND=hash make ready
 ```
-`.venv`/git훅/벡터스토어는 git에 안 올라가므로(재생성 가능) `make ready`가 복구한다. 소스·문서·규칙·
+`.venv`/git훅/**진입규칙 심링크**(CLAUDE.md 등)/벡터스토어는 git에 안 올라가므로(재생성 가능)
+`make ready`가 복구한다. 진입 규칙은 **정본 `AGENTS.md`만 추적**하고 CLAUDE.md/GEMINI.md/.cursorrules/
+Copilot 파일은 이 정본으로의 심링크로 재생성된다(심링크 미지원 OS는 복제 폴백). 소스·문서·AGENTS.md·
 스킬·archives·md/sql/index 는 git 으로 따라온다. **WSL은 네이티브 FS에 클론**(`/mnt/c` 금지).
 
 ## 빠른 시작 (Linux / WSL)

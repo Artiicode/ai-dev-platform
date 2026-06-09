@@ -2,6 +2,16 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.9.0] - 2026-06-09
+### Changed
+- **진입 규칙: 정본 1벌 + 심링크.** `gen_agent_rules`(v0.2)가 이제 **`AGENTS.md` 정본만** 만들고
+  `CLAUDE.md`/`GEMINI.md`/`.cursorrules`/`.github/copilot-instructions.md`는 정본으로의 **심볼릭 링크**로
+  생성. 심링크는 `.gitignore`(미추적) → 드리프트 원천 차단, **AGENTS.md만 git 추적**. 심링크 미지원
+  OS(Windows 등)는 **복제 자동 폴백**. `.cursor/rules/*.mdc`는 제거(Cursor가 AGENTS.md 직접 읽음).
+- CI 드리프트 검사 → `AGENTS.md` 하나만. `make ready`/`post_clone.sh`에 심링크 생성 단계 추가.
+### Notes
+- 다른 파일명이 필요하면 `ln -s AGENTS.md <이름>`. (`ln -s 타겟 링크이름` 순서)
+
 ## [0.8.1] - 2026-06-09
 ### Added
 - **클론-후-사용 준비:** `scripts/post_clone.sh` + `make ready` — git clone 후 빠지는 것만 멱등 복구
