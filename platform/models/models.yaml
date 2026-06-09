@@ -3,20 +3,13 @@
 # model 은 LiteLLM 유효 id. 키가 없으면 해당 역할은 '비활성'(임의 폴백 없음).
 # 의존성은 키/모델 명시 시에만 부착(설계 원칙).  (ARCHITECTURE §5, §9)
 roles:
-  planner:
-    provider: anthropic
-    model: claude-opus-4-8       # LiteLLM: anthropic/claude-opus-4-8
-    api_key_env: ANTHROPIC_API_KEY
-  coder:
-    provider: anthropic
-    model: claude-sonnet-4-6
-    api_key_env: ANTHROPIC_API_KEY
-  verifier:
-    provider: anthropic
-    model: claude-sonnet-4-6
-    api_key_env: ANTHROPIC_API_KEY
+  # 핵심 플랫폼은 특정 벤더를 전제하지 않는다. provider/model/api_key_env 를 채울 때만 그 역할이
+  # 활성(미설정이면 비활성 — 임의 폴백 없음). 예시는 위 주석 참고.
+  planner:   { provider: null, model: null, api_key_env: null }
+  coder:     { provider: null, model: null, api_key_env: null }
+  verifier:  { provider: null, model: null, api_key_env: null }
   embedder:
-    provider: local         # 오프라인 가능. API로 교체 시 api_key_env 추가
+    provider: local         # 로컬 임베딩(벤더 무관). API로 교체 시 api_key_env 추가
     model: bge-m3
 # 다른 프로바이더로 교체 예 (role 블록을 아래처럼):
 #   coder: { provider: openai, model: gpt-4o,            api_key_env: OPENAI_API_KEY }

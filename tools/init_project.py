@@ -54,8 +54,8 @@ def init(name, link_type, url, ref, force, target=None):
     print("  1) repo 링크/의존성:  python tools/bootstrap/install.py --node %s" % rel)
     print("  2) 데이터 인제스트:    %s/data/update/ 에 파일 투입 후" % rel)
     print("                         python tools/data-to-info/router.py --node %s" % rel)
-    print("  3) MCP 서버 등록:      adapters/claude-code/mcp.example.json 참고")
-    print("                         (NODE_DIR=%s)" % rel)
+    print("  3) (선택) 하네스 활성화: platform/harnesses.yaml + harness gen-rules / sync-skills")
+    print("  4) MCP 서버 등록:      adapters/mcp.example.json 참고 (NODE_DIR=%s)" % rel)
     return 0
 
 

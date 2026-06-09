@@ -1,0 +1,23 @@
+# 하네스 어댑터 레지스트리 (옵트인). ──────────────────────────────────────────
+# 핵심 플랫폼은 하네스 중립이다. 여기 `enabled` 에 넣은 하네스에 한해서만 진입규칙/스킬/커맨드가
+# *로컬*에 생성된다(생성물은 모두 .gitignore — 미추적). 추적되는 정본은 중립 자산뿐:
+#   - 진입규칙 정본: AGENTS.md (벤더 무관 표준)
+#   - 스킬 정본:     platform/skills/<slug>.md
+#   - 커맨드 정본:   platform/commands/<slug>.md
+# 새 하네스 지원 = 코드 수정 없이 아래에 블록 한 개 추가하면 끝.
+harnesses:
+  claude-code:
+    rules_file:   CLAUDE.md            # 정본 AGENTS.md 로 심링크(미지원 OS는 복제)
+    skills_dir:   .claude/skills       # <slug>/SKILL.md
+    commands_dir: .claude/commands     # <slug>.md
+  cursor:
+    rules_file:   .cursorrules
+    skills_dir:   .cursor/skills
+  gemini:
+    rules_file:   GEMINI.md
+  copilot:
+    rules_file:   .github/copilot-instructions.md
+
+# 사용할 하네스만 켠다. 비우면 순수 중립 플랫폼(AGENTS.md + 중립 정본만, 하네스 흔적 0).
+# 예: enabled: ["claude-code", "cursor"]
+enabled: []

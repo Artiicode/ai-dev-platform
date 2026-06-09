@@ -2,7 +2,7 @@
 """ai-autodev-harness MCP 서버 (L3b 어댑터).
 
 L2 기판(info/ 의 md·sql·vector + index.yaml)을 MCP 도구로 노출하는 *게이트웨이*다.
-자체 데이터를 소유하지 않는다 — 파일/DB를 읽을 뿐. 어떤 MCP 지원 클라이언트(Claude 등)든
+자체 데이터를 소유하지 않는다 — 파일/DB를 읽을 뿐. 어떤 MCP 지원 클라이언트(하네스 무관)든
 동일한 고충실도 접근(시맨틱 검색/SQL/출처)을 얻는다.
 
 대상 노드: 환경변수 NODE_DIR (없으면 현재 디렉토리). 클라이언트는 프로젝트 노드마다
@@ -51,7 +51,7 @@ def _now():
 
 
 def _rules_text():
-    for cand in (os.path.join(NODE_DIR, "CLAUDE.md"),
+    for cand in (os.path.join(NODE_DIR, "AGENTS.md"),
                  os.path.join(NODE_DIR, "..", "..", "platform", "prompts", "global-system.md")):
         if os.path.exists(cand):
             return open(cand, encoding="utf-8").read()
@@ -259,6 +259,6 @@ def request_approval(action: str, detail: str = "") -> dict:
 
 
 if __name__ == "__main__":
-    # 트랜스포트: stdio(기본, CLI/Claude Code) | sse | streamable-http (향후 웹 GUI)
+    # 트랜스포트: stdio(기본, CLI/MCP 클라이언트) | sse | streamable-http (향후 웹 GUI)
     transport = os.environ.get("HARNESS_MCP_TRANSPORT", "stdio")
     mcp.run(transport=transport)

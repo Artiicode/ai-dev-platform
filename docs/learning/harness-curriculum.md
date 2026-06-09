@@ -1,6 +1,6 @@
 ---
 title: "AI Harness Engineering — 학습 커리큘럼"
-version: 0.8.0
+version: 0.10.0
 last_updated: 2026-06-08
 status: living
 audience: [human, ai-agent]

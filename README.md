@@ -1,6 +1,6 @@
 # ai-autodev-harness
 
-여러 AI 에이전트(현재 Claude, 추후 임의 모델)가 협업해 소프트웨어 프로젝트를 개발/테스트/
+여러 AI 에이전트(모델·하네스 무관)가 협업해 소프트웨어 프로젝트를 개발/테스트/
 디버그/배포하는 **모델-무관(model-agnostic) 자동개발 하네스**.
 
 ## 핵심 아이디어
@@ -21,7 +21,7 @@
 platform/   글로벌 AI 설정(프롬프트/정책/모델 매핑)
 tools/      data→info 변환기 + 부트스트랩
 mcp/        기판을 노출하는 MCP 서버
-adapters/   플랫폼별 어댑터(claude-code 등)
+adapters/   기판 접근 어댑터(MCP·웹GUI). 하네스 활성화는 platform/harnesses.yaml
 projects/   <name>-node/ 프로젝트 노드 (+ _template-node 템플릿)
 docs/       ARCHITECTURE / adr / schemas / learning
 ```
@@ -48,7 +48,7 @@ bash scripts/setup.sh && source .venv/bin/activate     # 의존성 + tesseract +
 cp ~/data/*  projects/my_proj-node/data/update/        # 아무 포맷 투입
 ./harness ingest my_proj                               # 추출→md/sql/vector
 ./harness search my_proj "검색어"                       # 벡터 RAG
-./harness serve  my_proj                               # MCP 서버 (Claude 연결)
+./harness serve  my_proj                               # MCP 서버 (MCP 지원 하네스 연결)
 ```
 전체 사용법(설치·인제스트·MCP 등록·웹 GUI·트러블슈팅): **docs/USAGE.md**
 

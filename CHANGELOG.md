@@ -2,6 +2,20 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.10.0] - 2026-06-09
+### Changed
+- **하네스 완전 중립화 + 옵트인 어댑터 레지스트리.** 추적되는 건 중립 정본뿐(AGENTS.md,
+  platform/skills|commands/*.md, platform/harnesses.yaml). 하네스 고유 산출물(CLAUDE.md/.cursorrules/
+  .claude/.cursor/...)은 `harnesses.yaml`의 `enabled`에 켠 하네스에 한해 **로컬 생성·미추적**.
+- `gen_agent_rules`(v0.3)·`sync_skills` 가 레지스트리 구동(하드코딩 제거). `sync_skills`는 스킬+커맨드 배포.
+- `models.yaml` 역할 기본 **미설정**(벤더 무전제). `web-gui` relay를 `tools/lib/llm.py`(LiteLLM) 경유로.
+- 문서/MCP 서버 문구 하네스 중립화. `mcp/server.py` 규칙 로딩 `AGENTS.md` 기준으로 수정.
+### Removed
+- `adapters/claude-code/**`(커맨드는 중립 `platform/commands/`로 이전, MCP 예시는 `adapters/mcp.example.json`).
+  `.cursor/rules/*.mdc` 생성 제거. `manifest.adapters.enabled` 기본 `[]`.
+### Notes
+- 아무 하네스도 안 켜면 순수 추상 플랫폼(AGENTS.md만). 새 하네스 = harnesses.yaml 에 블록 추가(코드 무수정).
+
 ## [0.9.0] - 2026-06-09
 ### Changed
 - **진입 규칙: 정본 1벌 + 심링크.** `gen_agent_rules`(v0.2)가 이제 **`AGENTS.md` 정본만** 만들고

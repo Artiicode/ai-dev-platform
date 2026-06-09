@@ -1,12 +1,12 @@
 ---
 title: "ai-autodev-harness — 아키텍처 설계"
-version: 0.8.0
+version: 0.10.0
 last_updated: 2026-06-08
 status: living
 audience: [human, ai-agent]
 tags: [architecture, harness, multi-agent, mcp, rag, provenance, versioning, security]
 summary: >
-  여러 AI 에이전트(현재 Claude, 추후 임의 모델)가 협업해 소프트웨어 프로젝트를
+  여러 AI 에이전트(모델·하네스 무관)가 협업해 소프트웨어 프로젝트를
   개발/테스트/디버그/배포하는 모델-무관(model-agnostic) 자동개발 하네스의 설계.
   핵심 = 지식 기판(파일 진실원본) + MCP 어댑터(고충실도 접근) + 운영 플레이북(시나리오) + ETL/RAG 인제스트.
 retrieval_notes: >
@@ -46,7 +46,7 @@ retrieval_notes: >
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  L4  Adapters       claude-code / generic-api / (future)      │  플랫폼별 얇은 변환
+│  L4  Adapters       MCP / web-gui / (opt-in harnesses)        │  하네스별 얇은 변환
 │      (slash command, hook, prompt injection 방식이 제각각)     │
 ├─────────────────────────────────────────────────────────────┤
 │  L3  Access         (a) 파일 컨벤션  ─ 보편 baseline           │  ← 진실 원본
@@ -69,7 +69,7 @@ retrieval_notes: >
 - MCP 서버는 L2 기판을 읽고 쓰는 게이트웨이일 뿐, 별도 데이터를 갖지 않는다(소유권 단일화).
 
 **결론:** 파일 컨벤션 = "항상 동작하는 최저 공통분모", MCP = "지원되는 곳의 가속기". 어댑터(L4)는
-플랫폼 특수성(Claude Code의 `/update` 같은 slash command, hook)만 흡수한다.
+하네스 특수성(slash command·hook·프롬프트 주입)만 흡수하며, 활성화는 `platform/harnesses.yaml`.
 
 ---
 
@@ -93,8 +93,9 @@ ai-autodev-harness/                 # 플랫폼 루트 (semver로 버전관리)
 │   ├── bootstrap/                  #   의존성·repo 링크 자동 설치
 │   └── lib/                        #   provenance 등 공용
 ├── mcp/                            # 기판을 노출하는 MCP 서버 (L3b 어댑터)
-├── adapters/                       # 플랫폼별 어댑터 (L4)
-│   ├── claude-code/commands/       #   slash command (/update 등)
+├── adapters/                       # 하네스 접근 어댑터 (L4; 활성화는 platform/harnesses.yaml)
+│   ├── mcp.example.json            #   MCP 클라이언트 등록 예시
+│   ├── web-gui/                    #   브라우저 GUI(동일 기판 재사용)
 │   └── generic-api/                #   MCP 미지원 클라이언트용 폴백
 ├── docs/
 │   ├── ARCHITECTURE.md             #   (이 문서)

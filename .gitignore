@@ -15,13 +15,15 @@
 **/info/vector/*.db
 **/info/vector/*.db-journal
 
-# 진입 규칙 파일: 정본 AGENTS.md 만 추적. 나머지는 정본으로의 심링크(미추적,
-# `harness gen-rules`/`make ready`가 로컬 생성; 심링크 미지원 OS면 복제 폴백).
+# 하네스 고유 산출물(미추적): 정본만 추적, 아래는 harnesses.yaml enabled 에 따라 로컬 생성.
+#   진입규칙: 정본 AGENTS.md → 하네스별 파일은 심링크(미지원 OS는 복제)
+#   스킬/커맨드: 정본 platform/skills|commands/<slug>.md → 하네스 디렉토리로 투영
 CLAUDE.md
 GEMINI.md
 .cursorrules
 **/copilot-instructions.md
-**/.cursor/rules/workspace.mdc
+.claude/
+.cursor/
 
 # 상태/락
 **/state/lock.json

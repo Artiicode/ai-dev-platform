@@ -7,7 +7,7 @@ description: data/update/ 에 들어온 임의 포맷 파일을 검증 가능한
 
 ## 언제
 - 사용자가 노드 `data/update/`에 파일(pdf/docx/html/img/json/csv 등)을 넣고
-  "정보 업데이트", "/update", "인제스트" 등을 요청할 때.
+  "정보 업데이트", "인제스트" 등을 요청할 때.
 
 ## 절차
 1. 대상 노드 확인 후 `data/update/`에 파일이 있는지 본다.

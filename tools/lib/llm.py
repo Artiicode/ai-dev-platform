@@ -51,6 +51,8 @@ def role_available(role: str) -> bool:
 def complete(role: str, messages, **kwargs):
     """역할로 추론 실행. 키 없으면 RuntimeError, litellm 없으면 안내 에러."""
     provider, model, key_env = resolve_role(role)
+    if not provider:
+        raise RuntimeError("role '%s' provider 미설정 — platform/models/models.yaml 을 채우세요." % role)
     if provider == "local":
         raise RuntimeError("role '%s' 는 local provider — 추론 호출 대상이 아닙니다." % role)
     if key_env and not os.environ.get(key_env):
@@ -81,15 +83,16 @@ def audit() -> int:
     for role, cfg in roles.items():
         cfg = cfg or {}
         prov, model, key_env = cfg.get("provider"), cfg.get("model"), cfg.get("api_key_env")
-        if prov == "local":
-            status = "OK — 로컬(키 불필요)"
+        if not prov:
+            status, mid = "미설정 — models.yaml 에 provider/model 채우기", "—"
+        elif prov == "local":
+            status, mid = "OK — 로컬(키 불필요)", "%s:%s" % (prov, model)
         elif not key_env:
-            status = "⚠ api_key_env 미지정"
+            status, mid = "⚠ api_key_env 미지정", litellm_model_id(prov, model)
         elif os.environ.get(key_env):
-            status = "OK — %s 설정됨" % key_env
+            status, mid = "OK — %s 설정됨" % key_env, litellm_model_id(prov, model)
         else:
-            status = "비활성 — %s 없음" % key_env
-        mid = litellm_model_id(prov, model) or ("%s:%s" % (prov, model))
+            status, mid = "비활성 — %s 없음" % key_env, litellm_model_id(prov, model)
         print("  %-9s %-28s %s" % (role, mid, status))
     return 0
 

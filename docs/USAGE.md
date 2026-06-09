@@ -1,6 +1,6 @@
 ---
 title: "ai-autodev-harness — 사용법 (Linux / WSL)"
-version: 0.8.0
+version: 0.10.0
 last_updated: 2026-06-08
 status: living
 audience: [human, ai-agent]
@@ -17,7 +17,7 @@ audience: [human, ai-agent]
 # WSL/Linux 셸에서 (리포 루트)
 bash scripts/setup.sh        # .venv 생성 + 의존성 설치 + tesseract 안내 + .env 생성
 source .venv/bin/activate     # 이후 세션마다
-cp -n .env.example .env        # ANTHROPIC_API_KEY 등 채우기
+cp -n .env.example .env        # 사용할 모델 키 채우기(models.yaml 참조; 미설정도 동작)
 ```
 
 `scripts/setup.sh`가 하는 일: WSL 감지 → (apt가 있으면) `tesseract-ocr` 설치 → `.venv` 생성 →
@@ -47,11 +47,11 @@ cp -n .env.example .env        # ANTHROPIC_API_KEY 등 채우기
 ./harness verify    <name>                        # code/verify.yaml 체크 실행
 ./harness webgui    <name> [--port 8800]          # 브라우저 GUI (RAG/SQL/chat)
 # 강제성(어떤 AI 에이전트든 규칙 준수):
-./harness gen-rules [--node NAME]                 # CLAUDE.md/AGENTS.md/GEMINI.md/.cursorrules/Copilot 생성
+./harness gen-rules [--node NAME]                 # 정본 AGENTS.md(+활성 하네스 진입파일 심링크) 생성
 ./harness validate  [<name>] [--strict]           # 노드 적합성 검증(스키마/구조/시크릿/repo청결)
 ./harness install-hooks                           # pre-commit 훅 설치(git init 후; CI는 항상)
 ./harness models                                  # 역할별 모델/키 가용성 점검(LiteLLM, 네트워크 불필요)
-./harness sync-skills [--node NAME] [--link]      # platform/skills/* → .claude/.cursor 배포(기본 복제)
+./harness sync-skills [--node NAME] [--link]      # platform/skills|commands/* → 활성 하네스 배포(기본 복제)
 ```
 
 > **기존 로컬 프로젝트를 심링크로 연결:** `./harness init my_proj --link-type symlink --target /abs/path/to/my_proj`
@@ -78,8 +78,8 @@ cp ~/specs/*.pdf  ~/data/*.json  projects/project_A-node/data/update/
 MCP 서버는 노드의 `info/`(md·sql·vector)를 `list_info / search_info / query_sql / read_md /
 get_provenance` 도구로 노출합니다. 노드마다 `NODE_DIR`로 하나씩 띄웁니다.
 
-### (a) Claude Code (WSL 안에서 실행)
-리포 루트에 `.mcp.json` (예시: `adapters/claude-code/mcp.example.json`):
+### (a) MCP 클라이언트 — 예: Claude Code (WSL 안에서 실행)
+리포 루트에 `.mcp.json` (예시: `adapters/mcp.example.json`):
 ```json
 {
   "mcpServers": {

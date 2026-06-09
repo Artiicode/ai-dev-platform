@@ -34,21 +34,21 @@ def _chat(message):
     hits = mcp_tools.search_info(message, 4)
     ctx = "\n".join("- (%s) %s" % (h.get("doc_id"), h.get("text", "")[:200])
                     for h in hits if "error" not in h)
-    key = os.environ.get("ANTHROPIC_API_KEY")
-    if key:
-        try:
-            import anthropic  # 선택 의존성
-            cli = anthropic.Anthropic(api_key=key)
-            msg = cli.messages.create(
-                model=os.environ.get("HARNESS_CHAT_MODEL", "claude-sonnet-4-6"),
-                max_tokens=800,
-                system="너는 이 프로젝트 노드의 도우미다. 아래 컨텍스트만 근거로 간결히 답하라.",
-                messages=[{"role": "user", "content": "컨텍스트:\n%s\n\n질문: %s" % (ctx, message)}])
-            return {"answer": msg.content[0].text, "context": hits, "via": "anthropic"}
-        except Exception as e:
-            return {"answer": "(LLM 호출 실패: %s) 검색 컨텍스트만 반환합니다." % e,
-                    "context": hits, "via": "error"}
-    return {"answer": "(LLM relay 미연결: ANTHROPIC_API_KEY 설정 시 모델 답변. 지금은 RAG 컨텍스트만 표시)",
+    # 벤더 무관 relay: models.yaml 의 'coder' 역할이 설정+키 있으면 LiteLLM 경유 호출.
+    try:
+        import llm  # tools/lib (provider 무관)
+        if llm.role_available("coder"):
+            resp = llm.complete("coder", [
+                {"role": "system", "content": "이 노드의 도우미. 아래 컨텍스트만 근거로 간결히 답하라."},
+                {"role": "user", "content": "컨텍스트:\n%s\n\n질문: %s" % (ctx, message)}],
+                max_tokens=800)
+            m = resp.choices[0].message
+            ans = getattr(m, "content", None) or (m.get("content") if isinstance(m, dict) else str(m))
+            return {"answer": ans, "context": hits, "via": "litellm"}
+    except Exception as e:
+        return {"answer": "(LLM 호출 실패: %s) 검색 컨텍스트만 반환합니다." % e,
+                "context": hits, "via": "error"}
+    return {"answer": "(LLM relay 미연결: models.yaml 의 역할/키 설정 시 모델 답변. 지금은 RAG 컨텍스트만 표시)",
             "context": hits, "via": "stub"}
 
 

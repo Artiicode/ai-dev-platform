@@ -1,7 +1,7 @@
 # mcp/ — 기판 노출 MCP 서버 (L3b 어댑터)
 
 L2 기판(info/ 의 md·sql·vector + index.yaml)을 MCP 도구로 노출하는 게이트웨이.
-자체 데이터 소유 없음 — 파일/DB를 읽을 뿐. MCP 지원 클라이언트(Claude 등)가 동일 접근.
+자체 데이터 소유 없음 — 파일/DB를 읽을 뿐. MCP 지원 클라이언트(하네스 무관)가 동일 접근.
 
 ## 노출 도구
 | 도구 | 설명 |
@@ -20,5 +20,5 @@ NODE_DIR=../projects/<name>-node python server.py     # stdio MCP 서버
 ```
 대상 노드는 `NODE_DIR` 환경변수로 지정한다(노드마다 서버 1개).
 
-## 클라이언트 등록 (Claude Code 예시: .mcp.json)
-`adapters/claude-code/mcp.example.json` 참고. NODE_DIR 를 프로젝트 노드 경로로.
+## 클라이언트 등록 (MCP 클라이언트 .mcp.json)
+`adapters/mcp.example.json` 참고. NODE_DIR 를 프로젝트 노드 경로로.

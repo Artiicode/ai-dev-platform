@@ -1,10 +1,10 @@
 platform:
   name: ai-autodev-harness
-  version: 0.9.0           # SemVer (VERSION 파일과 동기화)
+  version: 0.10.0          # SemVer (VERSION 파일과 동기화)
   schema_version: 1         # 노드/인덱스 매니페스트 포맷 버전
 adapters:
-  enabled: [claude-code]    # 활성 플랫폼 어댑터
-  mcp_server: mcp/server.py # 기판 노출(L3b)
+  enabled: []               # 하네스 활성화는 platform/harnesses.yaml 에서(중립 기본)
+  mcp_server: mcp/server.py # 기판 노출(L3b, 프로토콜 중립)
 defaults:
   storage:                  # 노드가 오버라이드 가능 (ARCHITECTURE §6)
     md_max_chars: 8000
