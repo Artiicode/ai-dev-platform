@@ -2,6 +2,13 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.8.1] - 2026-06-09
+### Added
+- **클론-후-사용 준비:** `scripts/post_clone.sh` + `make ready` — git clone 후 빠지는 것만 멱등 복구
+  (venv+의존성 / git pre-commit 훅 / 벡터 스토어 archives→info 재생성). README "git clone 후 바로 쓰기".
+### Verified
+- 로컬 file:// 테스트 클론 왕복: 클론 직후 .venv·벡터·훅 부재 → 복구 로직 후 search/validate/훅 동작.
+
 ## [0.8.0] - 2026-06-08
 ### Added
 - **Cursor 네이티브 룰(.mdc):** `gen_agent_rules.py`가 `.cursor/rules/workspace.mdc`

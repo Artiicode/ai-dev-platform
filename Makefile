@@ -1,11 +1,14 @@
 # ai-autodev-harness — Linux/WSL 편의 타깃
-.PHONY: setup test clean init ingest serve info
+.PHONY: setup ready test clean init ingest serve info
 PY := $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 NODE ?=
 NAME ?=
 
 setup:            ## venv + 의존성 + tesseract 안내
 	bash scripts/setup.sh
+
+ready:            ## git clone 후 사용준비(멱등): venv + 훅 + 벡터 재생성
+	bash scripts/post_clone.sh
 
 init:             ## 새 노드:  make init NAME=my_proj
 	$(PY) tools/harness_cli.py init $(NAME)

@@ -26,6 +26,16 @@ projects/   <name>-node/ 프로젝트 노드 (+ _template-node 템플릿)
 docs/       ARCHITECTURE / adr / schemas / learning
 ```
 
+## git clone 후 바로 쓰기 (다른 곳/머신)
+```bash
+git clone <remote-url> ai-dev-platform && cd ai-dev-platform
+make ready              # 멱등: venv+의존성 + git훅 + 벡터 재생성(archives→info)
+source .venv/bin/activate
+# 오프라인이면:  HARNESS_EMBED_BACKEND=hash make ready
+```
+`.venv`/git훅/벡터스토어는 git에 안 올라가므로(재생성 가능) `make ready`가 복구한다. 소스·문서·규칙·
+스킬·archives·md/sql/index 는 git 으로 따라온다. **WSL은 네이티브 FS에 클론**(`/mnt/c` 금지).
+
 ## 빠른 시작 (Linux / WSL)
 ```bash
 bash scripts/setup.sh && source .venv/bin/activate     # 의존성 + tesseract + .env
