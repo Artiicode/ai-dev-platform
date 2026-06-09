@@ -2,6 +2,15 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.11.0] - 2026-06-09
+### Added
+- 참조자료 업데이트 커맨드 `platform/commands/update-reference.md` (`/update-reference`): 노드
+  `data/update/` 자료를 종류별로 인제스트(숫자/표→SQL, 큰 문서→RAG, 작은 권위문서→md).
+- 첫 참조 노드 `projects/example_project-node` (link-type path). 업로드 위치 = 그 노드 `data/update/`.
+### Changed
+- `harnesses.yaml`: 이 인스턴스에서 `claude-code` 활성 → `.claude/commands`(/update-reference 등)·skills,
+  `CLAUDE.md` 로컬 생성(미추적). 워크플로: data/update 에 파일 → "업데이트 해줘" 또는 `/update-reference`.
+
 ## [0.10.1] - 2026-06-09
 ### Removed
 - 예제 노드 `projects/project_A-node` 제거(템플릿 `_template-node`만 유지). 문서·MCP 예시의 예제명을

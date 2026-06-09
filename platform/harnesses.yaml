@@ -20,4 +20,4 @@ harnesses:
 
 # 사용할 하네스만 켠다. 비우면 순수 중립 플랫폼(AGENTS.md + 중립 정본만, 하네스 흔적 0).
 # 예: enabled: ["claude-code", "cursor"]
-enabled: []
+enabled: ["claude-code"]
