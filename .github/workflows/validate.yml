@@ -17,5 +17,6 @@ jobs:
       - name: 진입 규칙 파일 최신화 확인
         run: |
           python tools/gen_agent_rules.py
-          git diff --exit-code -- CLAUDE.md AGENTS.md GEMINI.md .cursorrules .github/copilot-instructions.md \
+          git diff --exit-code -- CLAUDE.md AGENTS.md GEMINI.md .cursorrules \
+            .github/copilot-instructions.md .cursor/rules/workspace.mdc \
             || { echo "::error::진입 규칙 파일이 오래됨 — 'python tools/gen_agent_rules.py' 후 커밋하세요."; exit 1; }

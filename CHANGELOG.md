@@ -2,6 +2,17 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.8.0] - 2026-06-08
+### Added
+- **Cursor 네이티브 룰(.mdc):** `gen_agent_rules.py`가 `.cursor/rules/workspace.mdc`
+  (`alwaysApply: true`, frontmatter 최상단)도 생성(루트+노드). CI 드리프트 검사에 포함.
+- **하네스 중립 스킬 레지스트리 + 배포:** 정본 `platform/skills/<slug>.md`(+노드 `skills/`)를
+  `tools/sync_skills.py` (+ `harness sync-skills`)가 `.claude/skills/`·`.cursor/skills/`로 배포.
+  기본 **복제**(이식성), `--link`는 POSIX 심볼릭 링크 선택. 예시 스킬 `update-info` 포함.
+### Notes
+- 진입 파일은 계속 생성-복제(드리프트 CI 검사) — 심링크 대신. 스킬도 기본 복제로 stack 의존 최소화.
+  (general/chat 차용 검토: 진입 파일은 복제가 정설, 심링크는 스킬 단일원본 용도였음.)
+
 ## [0.7.0] - 2026-06-08
 ### Added
 - **강제성 ① 보편층(모델·하네스 비종속):** `tools/gen_agent_rules.py` (+ `harness gen-rules`) —

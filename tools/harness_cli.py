@@ -63,6 +63,11 @@ def cmd_models(a):
     return llm.audit()
 
 
+def cmd_syncskills(a):
+    import sync_skills
+    return sync_skills.sync(getattr(a, "node", None), a.link)
+
+
 def cmd_bootstrap(a):
     import install
     node = resolve_node(a.node); m = install.load_manifest(node)
@@ -197,6 +202,10 @@ def build_parser():
     p = sub.add_parser("install-hooks"); p.set_defaults(fn=cmd_installhooks)
 
     p = sub.add_parser("models"); p.set_defaults(fn=cmd_models)
+
+    p = sub.add_parser("sync-skills"); p.add_argument("--node", default=None)
+    p.add_argument("--link", action="store_true", help="복제 대신 심볼릭 링크(POSIX 전용)")
+    p.set_defaults(fn=cmd_syncskills)
 
     p = sub.add_parser("bootstrap"); p.add_argument("node"); p.add_argument("--dry-run", action="store_true")
     p.set_defaults(fn=cmd_bootstrap)

@@ -1,6 +1,6 @@
 ---
 title: "ai-autodev-harness — 아키텍처 설계"
-version: 0.7.0
+version: 0.8.0
 last_updated: 2026-06-08
 status: living
 audience: [human, ai-agent]

@@ -114,6 +114,13 @@ def _write(base_dir: str, body: str, regen_arg: str):
         os.makedirs(os.path.dirname(dst) or ".", exist_ok=True)
         open(dst, "w", encoding="utf-8").write(out)
         written.append(os.path.relpath(dst, ROOT))
+    # Cursor 최신 네이티브 포맷(.cursor/rules/*.mdc). frontmatter 가 최상단이어야 하므로 별도 처리.
+    mdc = os.path.join(base_dir, ".cursor", "rules", "workspace.mdc")
+    os.makedirs(os.path.dirname(mdc), exist_ok=True)
+    mdc_out = ("---\ndescription: ai-autodev-harness 운영 규칙 (always apply)\nalwaysApply: true\n---\n\n"
+               + header + "\n" + body)
+    open(mdc, "w", encoding="utf-8").write(mdc_out)
+    written.append(os.path.relpath(mdc, ROOT))
     return written
 
 

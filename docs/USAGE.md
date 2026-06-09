@@ -1,6 +1,6 @@
 ---
 title: "ai-autodev-harness — 사용법 (Linux / WSL)"
-version: 0.7.0
+version: 0.8.0
 last_updated: 2026-06-08
 status: living
 audience: [human, ai-agent]
@@ -51,6 +51,7 @@ cp -n .env.example .env        # ANTHROPIC_API_KEY 등 채우기
 ./harness validate  [<name>] [--strict]           # 노드 적합성 검증(스키마/구조/시크릿/repo청결)
 ./harness install-hooks                           # pre-commit 훅 설치(git init 후; CI는 항상)
 ./harness models                                  # 역할별 모델/키 가용성 점검(LiteLLM, 네트워크 불필요)
+./harness sync-skills [--node NAME] [--link]      # platform/skills/* → .claude/.cursor 배포(기본 복제)
 ```
 
 > **기존 로컬 프로젝트를 심링크로 연결:** `./harness init my_proj --link-type symlink --target /abs/path/to/my_proj`
