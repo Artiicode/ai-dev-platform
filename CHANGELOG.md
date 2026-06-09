@@ -2,6 +2,16 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.12.0] - 2026-06-10
+### Added
+- **라우팅 v2 Phase 1** (`tools/data-to-info/routing.py`): 의미적 route(sql|rag|wiki) 결정 =
+  힌트(파일명 `.sql.`/`.rag.`/`.wiki.`·프론트매터 `route:`) → LLM 분류기(role `classifier`→`coder`, 키 있을 때)
+  → 크기/확장자 폴백(키 없어도 동작). `info/index.yaml` 에 `route`/`route_by` 기록(provenance 확장).
+- `models.yaml` 에 `classifier` 역할(기본 미설정). ADR 0010(+md→엔티티 위키 Phase 2/3 로드맵).
+### Verified
+- 힌트가 크기 오버라이드(.rag.tiny→rag, .wiki.→wiki, 프론트매터 route:rag→rag), 키 없을 때 폴백
+  (json→sql, 작은 텍스트→wiki), index route/route_by 기록 확인.
+
 ## [0.11.0] - 2026-06-09
 ### Added
 - 참조자료 업데이트 커맨드 `platform/commands/update-reference.md` (`/update-reference`): 노드

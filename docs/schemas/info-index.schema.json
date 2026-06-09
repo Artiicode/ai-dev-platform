@@ -19,7 +19,9 @@
           "sha256": { "type": "string" },
           "ingested_at": { "type": "string", "format": "date-time" },
           "tool": { "type": "string" },
-          "supersedes": { "type": "array", "items": { "type": "string" } }
+          "supersedes": { "type": "array", "items": { "type": "string" } },
+          "route": { "enum": ["sql", "rag", "wiki"], "description": "의미적 라우팅 결정" },
+          "route_by": { "type": "string", "description": "결정 근거: hint|classifier|fallback" }
         }
       }
     }

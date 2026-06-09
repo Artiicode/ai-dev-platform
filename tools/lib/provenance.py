@@ -26,8 +26,12 @@ def load_index(node_dir: str) -> dict:
     return {"schema_version": 1, "entries": []}
 
 def record(node_dir: str, *, entry_id: str, store: str, location: str,
-           source: str, tool: str, supersedes=None, dry_run=False) -> dict:
-    """info/index.yaml 에 한 entry 추가(멱등: 동일 source+sha면 skip)."""
+           source: str, tool: str, supersedes=None, route=None, route_by=None,
+           dry_run=False) -> dict:
+    """info/index.yaml 에 한 entry 추가(멱등: 동일 source+sha면 skip).
+
+    route: 의미적 라우팅 결정(sql|rag|wiki), route_by: 결정 근거(hint|classifier|fallback).
+    """
     sha = sha256_of(source)
     entry = {
         "id": entry_id, "store": store, "location": location,
@@ -35,6 +39,10 @@ def record(node_dir: str, *, entry_id: str, store: str, location: str,
         "ingested_at": datetime.datetime.utcnow().isoformat() + "Z",
         "tool": tool, "supersedes": supersedes or [],
     }
+    if route:
+        entry["route"] = route
+    if route_by:
+        entry["route_by"] = route_by
     idx = load_index(node_dir)
     if any(e.get("sha256") == sha and e.get("source") == entry["source"] for e in idx["entries"]):
         return {"status": "skip-duplicate", "entry": entry}

@@ -8,6 +8,7 @@ roles:
   planner:   { provider: null, model: null, api_key_env: null }
   coder:     { provider: null, model: null, api_key_env: null }
   verifier:  { provider: null, model: null, api_key_env: null }
+  classifier: { provider: null, model: null, api_key_env: null }  # data→info 라우팅 분류(없으면 coder→크기폴백)
   embedder:
     provider: local         # 로컬 임베딩(벤더 무관). API로 교체 시 api_key_env 추가
     model: bge-m3
