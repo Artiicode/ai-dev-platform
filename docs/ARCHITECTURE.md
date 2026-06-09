@@ -1,6 +1,6 @@
 ---
 title: "ai-autodev-harness — 아키텍처 설계"
-version: 0.10.0
+version: 0.10.1
 last_updated: 2026-06-08
 status: living
 audience: [human, ai-agent]
@@ -170,12 +170,12 @@ projects/<project>-node/
 ```yaml
 # projects/<project>-node/manifest.yaml (발췌)
 node:
-  name: project_A
+  name: my_proj
   schema_version: 1          # 이 manifest 포맷 버전 (마이그레이션 키)
   harness_min_version: 0.1.0
 link:
   type: git-clone            # path | git-submodule | git-clone
-  url: git@github.com:org/project_A.git
+  url: git@github.com:org/my_proj.git
   ref: main                  # 브랜치/태그/커밋
   path: repo
 bootstrap:

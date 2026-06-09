@@ -1,6 +1,6 @@
 ---
 title: "ai-autodev-harness — 사용법 (Linux / WSL)"
-version: 0.10.0
+version: 0.10.1
 last_updated: 2026-06-08
 status: living
 audience: [human, ai-agent]
@@ -56,22 +56,22 @@ cp -n .env.example .env        # 사용할 모델 키 채우기(models.yaml 참�
 
 > **기존 로컬 프로젝트를 심링크로 연결:** `./harness init my_proj --link-type symlink --target /abs/path/to/my_proj`
 > 후 `./harness bootstrap projects/my_proj-node`. 대상 디렉토리가 존재해야 하며, 빈 `repo/`는 자동 대체됩니다.
-`<name>`은 `project_A`처럼 이름만 줘도 `projects/project_A-node`로 해석됩니다.
+`<name>`은 `my_proj`처럼 이름만 줘도 `projects/my_proj-node`로 해석됩니다.
 `make` 단축: `make setup`, `make init NAME=..`, `make ingest NODE=..`, `make serve NODE=..`, `make test`.
 
 ## 3. 새 프로젝트 시작
 
 ```bash
-./harness init project_A --link-type git-clone --url git@github.com:org/project_A.git --ref main
-./harness bootstrap project_A          # repo clone + setup 실행
+./harness init my_proj --link-type git-clone --url git@github.com:org/my_proj.git --ref main
+./harness bootstrap my_proj          # repo clone + setup 실행
 # 자료 투입(아무 포맷): pdf/docx/html/이미지/json/csv/md/txt
-cp ~/specs/*.pdf  ~/data/*.json  projects/project_A-node/data/update/
-./harness ingest project_A             # 추출→md/sql/vector, 원본은 archives/ 보존
-./harness info   project_A
+cp ~/specs/*.pdf  ~/data/*.json  projects/my_proj-node/data/update/
+./harness ingest my_proj             # 추출→md/sql/vector, 원본은 archives/ 보존
+./harness info   my_proj
 ```
 
 라우팅 규칙: 정형(.json/.csv/.tsv)→SQL, 문서는 추출 후 길면 벡터·짧으면 md, 이미지는 OCR.
-출처는 `projects/project_A-node/info/index.yaml`(provenance).
+출처는 `projects/my_proj-node/info/index.yaml`(provenance).
 
 ## 4. AI가 데이터를 쓰게 하기 — MCP 서버 등록
 
@@ -83,10 +83,10 @@ get_provenance` 도구로 노출합니다. 노드마다 `NODE_DIR`로 하나씩 
 ```json
 {
   "mcpServers": {
-    "harness-project_A": {
+    "harness-my_proj": {
       "command": ".venv/bin/python",
       "args": ["mcp/server.py"],
-      "env": { "NODE_DIR": "projects/project_A-node", "HARNESS_EMBED_BACKEND": "local" }
+      "env": { "NODE_DIR": "projects/my_proj-node", "HARNESS_EMBED_BACKEND": "local" }
     }
   }
 }
@@ -97,10 +97,10 @@ Windows의 Claude Desktop MCP 설정에서 `wsl.exe`로 진입해 실행합니�
 ```json
 {
   "mcpServers": {
-    "harness-project_A": {
+    "harness-my_proj": {
       "command": "wsl.exe",
       "args": ["-d", "Ubuntu", "--", "bash", "-lc",
-        "cd ~/ai-harness && NODE_DIR=projects/project_A-node HARNESS_EMBED_BACKEND=local .venv/bin/python mcp/server.py"]
+        "cd ~/ai-harness && NODE_DIR=projects/my_proj-node HARNESS_EMBED_BACKEND=local .venv/bin/python mcp/server.py"]
     }
   }
 }
@@ -109,8 +109,8 @@ Windows의 Claude Desktop MCP 설정에서 `wsl.exe`로 진입해 실행합니�
 
 ### (c) CLI로 바로 (등록 없이)
 ```bash
-./harness search project_A "tool center point calibration"
-./harness query  project_A "SELECT label,x,y,z FROM robot_poses"
+./harness search my_proj "tool center point calibration"
+./harness query  my_proj "SELECT label,x,y,z FROM robot_poses"
 ```
 
 ## 5. 디버그/배포 시나리오
@@ -121,7 +121,7 @@ HW 접속 정보는 `hw/<target>.md`(시크릿은 이름 참조만; 값은 ssh-a
 ## 6. 웹 GUI (예정)
 Windows에서 브라우저로 대화하는 GUI는 **동일 MCP 서버를 재사용**합니다(새 데이터 계층 없음):
 ```bash
-./harness serve project_A --transport sse     # http://127.0.0.1:8000 (uvicorn)
+./harness serve my_proj --transport sse     # http://127.0.0.1:8000 (uvicorn)
 ```
 계획: 얇은 HTTP 레이어가 채팅 UI ↔ 모델(`platform/models/models.yaml`) ↔ MCP 도구를 중계.
 또는 `./harness webgui <name> --port 8800` (stdlib HTTP 스켈레톤: /api/info·search·query·chat).

@@ -15,7 +15,7 @@
   unlock     노드 락 해제
   worktree   ticket용 git worktree 생성
 
-노드 인자는 이름(project_A) 또는 경로(projects/project_A-node) 둘 다 허용.
+노드 인자는 이름(my_proj) 또는 경로(projects/my_proj-node) 둘 다 허용.
 """
 from __future__ import annotations
 import argparse

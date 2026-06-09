@@ -80,7 +80,7 @@ def sync(node: str | None = None, use_link: bool = False):
 
 def main():
     ap = argparse.ArgumentParser(description="정본 스킬/커맨드를 활성 하네스로 배포")
-    ap.add_argument("--node", default=None, help="노드 스킬도 배포(예: project_A)")
+    ap.add_argument("--node", default=None, help="노드 스킬도 배포(예: my_proj)")
     ap.add_argument("--link", action="store_true", help="복제 대신 심볼릭 링크(POSIX 전용)")
     a = ap.parse_args()
     sys.exit(sync(a.node, a.link))

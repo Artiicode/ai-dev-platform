@@ -12,7 +12,7 @@
 
 사용:
   python tools/gen_agent_rules.py            # 플랫폼 루트
-  python tools/gen_agent_rules.py --node project_A   # 노드 레벨
+  python tools/gen_agent_rules.py --node my_proj   # 노드 레벨
 정본은 AUTO-GENERATED 헤더가 붙으며 재생성으로 덮어쓴다(수동 편집 금지).
 """
 from __future__ import annotations
@@ -152,7 +152,7 @@ def generate(node: str | None = None):
 
 def main():
     ap = argparse.ArgumentParser(description="진입 규칙 파일 생성(강제성 ① 보편층)")
-    ap.add_argument("--node", default=None, help="노드 레벨 규칙도 생성(예: project_A)")
+    ap.add_argument("--node", default=None, help="노드 레벨 규칙도 생성(예: my_proj)")
     a = ap.parse_args()
     sys.exit(generate(a.node))
 

@@ -1,7 +1,7 @@
 # 프로젝트 노드 manifest. /init-project 가 <project>-node/manifest.yaml 로 복제.
 # 스키마: docs/schemas/node-manifest.schema.json
 node:
-  name: REPLACE_ME           # 예: project_A
+  name: REPLACE_ME           # 예: my_proj
   schema_version: 1
   harness_min_version: 0.1.0
 link:

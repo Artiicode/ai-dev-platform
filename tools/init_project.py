@@ -61,7 +61,7 @@ def init(name, link_type, url, ref, force, target=None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("name", help="프로젝트 이름 (예: project_A)")
+    ap.add_argument("name", help="프로젝트 이름 (예: my_proj)")
     ap.add_argument("--link-type", default="path", choices=["path", "git-submodule", "git-clone", "symlink"])
     ap.add_argument("--url", default=None, help="git-clone/submodule 의 원격 URL")
     ap.add_argument("--ref", default=None, help="브랜치/태그/커밋")

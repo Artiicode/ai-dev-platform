@@ -2,6 +2,13 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.10.1] - 2026-06-09
+### Removed
+- 예제 노드 `projects/project_A-node` 제거(템플릿 `_template-node`만 유지). 문서·MCP 예시의 예제명을
+  `my_proj`로 일반화.
+### Fixed
+- pre-commit 훅: 커밋에서 **삭제된 노드는 검증 생략**(`[ -d ]` 가드) — 노드 제거 시 커밋 거부 방지.
+
 ## [0.10.0] - 2026-06-09
 ### Changed
 - **하네스 완전 중립화 + 옵트인 어댑터 레지스트리.** 추적되는 건 중립 정본뿐(AGENTS.md,
