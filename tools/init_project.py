@@ -23,7 +23,16 @@ def _sub_in_file(path, repl: dict):
     open(path, "w", encoding="utf-8").write(s)
 
 
-def init(name, link_type, url, ref, force, target=None):
+_PRIVATE_GITIGNORE = (
+    "# Private node — never commit data, originals, or derived info (confidential / regenerable).\n"
+    "archives/\n"
+    "info/\n"
+    "data/update/*\n"
+    "!data/update/.gitkeep\n"
+)
+
+
+def init(name, link_type, url, ref, force, target=None, private=False):
     if not os.path.isdir(TEMPLATE):
         print("[init] 템플릿 없음: %s" % TEMPLATE, file=sys.stderr); return 1
     dest = os.path.join(ROOT, "projects", "%s-node" % name)
@@ -45,7 +54,12 @@ def init(name, link_type, url, ref, force, target=None):
         s = s.replace("ref: main", "ref: %s" % ref)
     if link_type == "symlink" and target:
         s = s.replace("  path: repo", "  path: repo\n  target: %s" % target)
+    if private:
+        # Mark the node private; data/originals/derived info stay local (see node .gitignore below).
+        s = s.replace("node:\n", "node:\n  private: true\n", 1)
     open(man, "w", encoding="utf-8").write(s)
+    if private:
+        open(os.path.join(dest, ".gitignore"), "w", encoding="utf-8").write(_PRIVATE_GITIGNORE)
     _sub_in_file(os.path.join(dest, "history", "ONBOARDING.md"), repl)
 
     rel = os.path.relpath(dest, ROOT)
@@ -66,9 +80,10 @@ def main():
     ap.add_argument("--url", default=None, help="git-clone/submodule 의 원격 URL")
     ap.add_argument("--ref", default=None, help="브랜치/태그/커밋")
     ap.add_argument("--target", default=None, help="link-type=symlink 의 대상 디렉토리(절대경로 권장)")
+    ap.add_argument("--private", action="store_true", help="기밀 노드: 데이터/산출물 미추적")
     ap.add_argument("--force", action="store_true")
     a = ap.parse_args()
-    sys.exit(init(a.name, a.link_type, a.url, a.ref, a.force, a.target))
+    sys.exit(init(a.name, a.link_type, a.url, a.ref, a.force, a.target, a.private))
 
 
 if __name__ == "__main__":

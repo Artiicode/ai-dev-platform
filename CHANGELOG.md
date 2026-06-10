@@ -2,6 +2,16 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.17.1] - 2026-06-10
+### Added
+- **commit-msg 훅(Conventional Commits 강제)** — `tools/hooks/commit-msg`, `harness install-hooks`가 함께 설치.
+  형식 위반 커밋 거부(`<type>: <summary>`). 우회는 `git commit --no-verify`.
+- **기밀 노드 정책** — `harness init <name> --private` → manifest `node.private: true` + 노드-로컬
+  `.gitignore`(`archives/`·`info/`·`data/update/*` 미추적). `validate_node`가 private 노드 데이터가
+  git 추적되면 **커밋 차단**(이중 안전망). 스키마에 `node.private` 추가.
+### Changed
+- CONTRIBUTING: **커밋 메시지·코드 주석은 영어로**(English) 작성 규칙 명시.
+
 ## [0.17.0] - 2026-06-10
 ### Removed
 - 예제 프로젝트 노드 제거 — 템플릿은 `_template-node`(노드 템플릿)만 포함한다. 실제 노드는

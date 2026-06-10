@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Conventional Commits enforcement (ai-autodev-harness). See CONTRIBUTING.md.
+# Installed by `harness install-hooks`. Subject must be: <type>: <summary>
+set -euo pipefail
+msg_file="$1"
+
+# First non-empty, non-comment line = the subject.
+subject="$(grep -vE '^[[:space:]]*#' "$msg_file" | grep -vE '^[[:space:]]*$' | head -1 || true)"
+
+# Allow git-generated / special commits.
+case "$subject" in
+  Merge\ *|Revert\ *|fixup!\ *|squash!\ *|amend!\ *) exit 0 ;;
+esac
+
+if printf '%s' "$subject" | grep -qE '^(feat|fix|docs|refactor|perf|test|build|ci|chore|revert)(\([^)]+\))?: .+'; then
+  exit 0
+fi
+
+echo "[commit-msg] Conventional Commits required." >&2
+echo "  format: <type>: <summary>   (type ∈ feat|fix|docs|refactor|perf|test|build|ci|chore|revert)" >&2
+echo "  got:    ${subject:-<empty>}" >&2
+echo "  see:    CONTRIBUTING.md   (bypass once with: git commit --no-verify)" >&2
+exit 1

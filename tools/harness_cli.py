@@ -39,7 +39,8 @@ def resolve_node(arg):
 
 def cmd_init(a):
     import init_project
-    return init_project.init(a.name, a.link_type, a.url, a.ref, a.force, getattr(a, "target", None))
+    return init_project.init(a.name, a.link_type, a.url, a.ref, a.force,
+                            getattr(a, "target", None), getattr(a, "private", False))
 
 
 def cmd_genrules(a):
@@ -220,6 +221,7 @@ def build_parser():
     p.add_argument("--link-type", default="path", choices=["path", "git-submodule", "git-clone", "symlink"])
     p.add_argument("--url"); p.add_argument("--ref"); p.add_argument("--force", action="store_true")
     p.add_argument("--target", help="link-type=symlink 의 대상 디렉토리(절대경로 권장)")
+    p.add_argument("--private", action="store_true", help="기밀 노드: 데이터/산출물 미추적")
     p.set_defaults(fn=cmd_init)
 
     p = sub.add_parser("gen-rules"); p.add_argument("--node", default=None)

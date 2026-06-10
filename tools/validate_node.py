@@ -145,6 +145,21 @@ def validate_node(node_dir, strict=False):
                 if not os.path.isdir(tgt_abs):
                     warnings.append("symlink target 미존재: %s (bootstrap 전이면 정상)" % tgt_abs)
 
+    # 8. private node: data / originals / derived info must not be git-tracked
+    if manifest and isinstance(manifest, dict) and (manifest.get("node", {}) or {}).get("private"):
+        import subprocess
+        rels = [os.path.join(os.path.relpath(node_dir, ROOT), d)
+                for d in ("archives", "info", "data/update")]
+        try:
+            out = subprocess.run(["git", "-C", ROOT, "ls-files", "--"] + rels,
+                                  capture_output=True, text=True, timeout=10).stdout.split()
+        except Exception:
+            out = []
+        leaked = [p for p in out if not p.endswith(".gitkeep")]
+        if leaked:
+            errors.append("private 노드인데 데이터가 git 추적됨(%d) — 커밋 금지: %s …"
+                          % (len(leaked), ", ".join(leaked[:3])))
+
     return errors, warnings
 
 

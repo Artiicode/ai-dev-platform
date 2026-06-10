@@ -44,9 +44,21 @@ Co-Authored-By: ...
 | `revert` | 이전 커밋 되돌림 |
 
 규칙:
-- 요약은 명령형·간결하게. 한국어 OK.
+- **커밋 메시지·코드 주석은 영어로 작성**(commit messages and code comments in English). 산문 문서(README/
+  USAGE/ADR 등)는 별도. 요약은 명령형·간결하게.
+- **`commit-msg` 훅이 형식을 강제**한다(`harness install-hooks`로 설치). 위반 시 커밋 거부 — 일회 우회는 `git commit --no-verify`.
 - 플랫폼 변경은 `CHANGELOG.md`(무엇), 설계 결정은 `docs/adr/`(왜)에 기록하고 커밋 본문에서 참조.
 - 위험·비자명 변경은 본문에 이유를. `Co-Authored-By` trailer 유지.
 - 커밋 전 `harness validate` 통과(노드 변경 시). pre-commit 훅이 자동 검사.
 
-예: `feat: 라우팅 v2 — 의미적 route(sql|rag|wiki)`, `chore: 예제 노드 정리`, `fix: info-index 스키마 enum`.
+예: `feat: routing v2 — semantic route (sql|rag|wiki)`, `chore: tidy example node`, `fix: info-index store enum`.
+
+## 3. 기밀(private) 노드
+
+기밀/회사 자료를 다루는 노드는 **데이터가 절대 커밋되지 않도록** private 로 만든다:
+```
+./harness init <name> --private
+```
+- manifest 에 `node.private: true` + 노드-로컬 `.gitignore`(`archives/`·`info/`·`data/update/*` 미추적) 생성.
+- `validate_node`(pre-commit/CI)가 **private 노드의 데이터가 git 추적되면 커밋 거부**(이중 안전망).
+- 추적되는 건 빈 스켈레톤(manifest 등)뿐 — 원본·추출물·벡터는 로컬에만 남는다.
