@@ -2,6 +2,11 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.16.2] - 2026-06-10
+### Changed
+- 예제 노드 이름 `example_project` → **`example_project`**(예제임이 명확하도록). `.mcp.json`도 갱신
+  (`harness-example_project`, NODE_DIR=projects/example_project-node).
+
 ## [0.16.1] - 2026-06-10
 ### Added
 - `.mcp.json`(루트): Claude Code가 `example_project` 노드의 MCP 서버를 **상주**로 띄우도록 등록.
