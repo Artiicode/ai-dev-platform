@@ -82,7 +82,7 @@ def _get_embedder():
     if _embedder is None:
         import embedder as emb
         backend = os.environ.get("HARNESS_EMBED_BACKEND", "local")
-        model = os.environ.get("HARNESS_EMBED_MODEL", "BAAI/bge-m3")
+        model = os.environ.get("HARNESS_EMBED_MODEL", emb.DEFAULT_MODEL)
         _embedder = emb.get_embedder(backend=backend, model=model)
     return _embedder
 
@@ -130,7 +130,7 @@ def search_info(query: str, k: int = 5) -> list:
         return [{"error": "벡터 스토어 없음. 먼저 router 로 인제스트하세요."}]
     emb = _get_embedder()
     store = vectorstore.VectorStore(vec_path, emb.dim)
-    qv = emb.embed([query])[0]
+    qv = emb.embed_query([query])[0]      # 쿼리 비대칭 인코딩(Qwen instruction)
     hits = store.search(qv, k)
     store.close()
     for h in hits:                       # 출처 종류 태깅(위키 vs RAG)

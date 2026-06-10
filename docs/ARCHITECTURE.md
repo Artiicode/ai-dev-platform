@@ -201,7 +201,7 @@ storage:                         # §6 라우팅 임계값(프로젝트별 오�
 roles:
   planner:  { provider: anthropic, model: claude-opus,   api_key_env: ANTHROPIC_API_KEY }
   coder:    { provider: anthropic, model: claude-sonnet, api_key_env: ANTHROPIC_API_KEY }
-  embedder: { provider: local,     model: bge-m3 }       # 로컬 임베딩 (오프라인 가능)
+  embedder: { provider: local,     model: Qwen/Qwen3-Embedding-0.6B }  # 로컬 임베딩(대안 bge-m3)
 ```
 
 키는 **절대 파일에 평문 저장 금지** — `*_env`로 환경변수/시크릿 매니저 *참조*만. (§9)

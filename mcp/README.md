@@ -7,7 +7,7 @@ L2 기판(info/ 의 md·sql·vector + index.yaml)을 MCP 도구로 노출하는 
 | 도구 | 설명 |
 |---|---|
 | `list_info()` | 이 노드의 md 파일/sql 테이블/벡터 청크 수 요약 |
-| `search_info(query, k)` | 벡터 RAG 시맨틱 검색(로컬 bge-m3), 출처 포함 |
+| `search_info(query, k)` | 벡터 시맨틱 검색(위키+RAG, 로컬 임베딩, 출처 포함) |
 | `query_sql(sql, db?)` | info/db/*.sqlite 읽기 전용 SQL (모든 db ATTACH) |
 | `read_md(name)` | info/md/<name> 원문 |
 | `get_provenance(entry_id?)` | info/index.yaml 출처 기록 |

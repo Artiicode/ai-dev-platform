@@ -23,7 +23,8 @@ cp -n .env.example .env        # 사용할 모델 키 채우기(models.yaml 참�
 `scripts/setup.sh`가 하는 일: WSL 감지 → (apt가 있으면) `tesseract-ocr` 설치 → `.venv` 생성 →
 `requirements.txt` 설치 → sqlite-vec / mcp import 검증.
 
-- **임베딩 모델:** 기본 `bge-m3`는 최초 1회 약 2GB 다운로드(로컬·오프라인 추론). 받기 전이거나
+- **임베딩 모델:** 기본 `Qwen/Qwen3-Embedding-0.6B`(다국어·한국어 우수, ~1.2GB, 쿼리 instruction 자동).
+  대안 `BAAI/bge-m3`(`HARNESS_EMBED_MODEL`로 교체). 최초 1회 다운로드. 받기 전이거나
   오프라인이면 `export HARNESS_EMBED_BACKEND=hash`로 결정적 폴백을 쓸 수 있습니다(검색 품질↓, 배관은 동일).
 - **OCR:** 이미지 인제스트는 `tesseract` 바이너리 필요. 없으면 이미지 파일만 건너뜁니다.
 

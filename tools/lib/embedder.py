@@ -1,17 +1,22 @@
 """embedder — 로컬 우선 텍스트 임베딩.
 
-기본 백엔드는 bge-m3(sentence-transformers, 로컬/오프라인, dim=1024).
-모델 미설치 환경에서도 파이프라인이 동작하도록 결정적 'hash' 폴백을 제공한다(테스트/오프라인용).
-설정은 platform/models/models.yaml 의 roles.embedder 를 따른다.
+기본 모델은 Qwen3-Embedding-0.6B(sentence-transformers, 로컬/오프라인, dim=1024, 다국어·한국어 우수).
+대안: BAAI/bge-m3 (MIT, hybrid). 둘 다 1024차원이라 벡터스토어 드롭인.
+모델 미설치 환경에서도 파이프라인이 동작하도록 결정적 'hash' 폴백 제공(테스트/오프라인용).
+설정은 platform/models/models.yaml 의 embedding / HARNESS_EMBED_MODEL 를 따른다.
+
+비대칭 인코딩: 문서(passage)는 plain, 쿼리는 `embed_query`(Qwen 류는 instruction 프리픽스 부착).
 """
 from __future__ import annotations
 import hashlib
 import math
 from typing import List
 
-__tool_version__ = "0.1.0"
+__tool_version__ = "0.2.0"
 
-DEFAULT_DIM = 1024  # bge-m3
+DEFAULT_DIM = 1024  # Qwen3-Embedding-0.6B / bge-m3 공통
+DEFAULT_MODEL = "Qwen/Qwen3-Embedding-0.6B"
+_QWEN_QUERY_INSTRUCT = "Instruct: Given a question, retrieve passages that answer it\nQuery: "
 
 
 class HashEmbedder:
@@ -40,22 +45,38 @@ class HashEmbedder:
     def embed(self, texts: List[str]) -> List[List[float]]:
         return [self._vec(t) for t in texts]
 
+    def embed_query(self, texts: List[str]) -> List[List[float]]:
+        return self.embed(texts)   # 해시 폴백은 비대칭 인코딩 없음
+
 
 class SentenceTransformerEmbedder:
-    """bge-m3 등 로컬 임베딩 모델. sentence-transformers 필요(모델은 최초 1회 다운로드)."""
+    """Qwen3-Embedding / bge-m3 등 로컬 임베딩 모델. sentence-transformers 필요(최초 1회 다운로드).
 
-    def __init__(self, model: str = "BAAI/bge-m3"):
+    문서는 plain 인코딩, 쿼리는 embed_query(Qwen 류는 instruction 프리픽스). bge-m3 는 프리픽스 없음.
+    """
+
+    def __init__(self, model: str = DEFAULT_MODEL):
         from sentence_transformers import SentenceTransformer  # lazy import
         self._m = SentenceTransformer(model)
         self.name = model
-        self.dim = self._m.get_sentence_embedding_dimension()
+        try:
+            self.dim = self._m.get_embedding_dimension()
+        except AttributeError:
+            self.dim = self._m.get_sentence_embedding_dimension()
+        # Qwen3-Embedding 류는 쿼리 instruction 으로 검색 품질이 크게 오른다(문서는 plain).
+        self.query_instruction = _QWEN_QUERY_INSTRUCT if "qwen3-embedding" in model.lower() else None
 
     def embed(self, texts: List[str]) -> List[List[float]]:
         vecs = self._m.encode(texts, normalize_embeddings=True)
         return [list(map(float, v)) for v in vecs]
 
+    def embed_query(self, texts: List[str]) -> List[List[float]]:
+        if self.query_instruction:
+            texts = [self.query_instruction + t for t in texts]
+        return self.embed(texts)
 
-def get_embedder(backend: str = "local", model: str = "BAAI/bge-m3",
+
+def get_embedder(backend: str = "local", model: str = DEFAULT_MODEL,
                  dim: int = DEFAULT_DIM):
     """설정 → 임베더 인스턴스. 로컬 모델 로드 실패 시 hash 폴백으로 강등(경고 출력)."""
     if backend == "hash":

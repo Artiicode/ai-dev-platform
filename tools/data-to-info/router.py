@@ -110,7 +110,7 @@ def _load_embedder():
     sys.path.insert(0, _LIB)
     import embedder as emb
     return emb.get_embedder(backend=os.environ.get("HARNESS_EMBED_BACKEND", "local"),
-                            model=os.environ.get("HARNESS_EMBED_MODEL", "BAAI/bge-m3"))
+                            model=os.environ.get("HARNESS_EMBED_MODEL", emb.DEFAULT_MODEL))
 
 
 def run(node_dir, md_max, vector_min, dry_run):

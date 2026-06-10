@@ -39,4 +39,4 @@ print("    sqlite-vec:", c.execute("select vec_version()").fetchone()[0], "| mcp
 PY
 echo
 echo "완료. 사용:  ./harness init my_proj   (자세히: docs/USAGE.md)"
-echo "참고: bge-m3 임베딩은 최초 1회 모델 다운로드(~2GB). 오프라인/테스트는 HARNESS_EMBED_BACKEND=hash."
+echo "참고: 기본 임베딩 Qwen3-Embedding-0.6B(~1.2GB) 최초 1회 다운로드(대안 BAAI/bge-m3). 오프라인/테스트는 HARNESS_EMBED_BACKEND=hash."

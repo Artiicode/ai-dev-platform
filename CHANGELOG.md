@@ -2,6 +2,16 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.15.0] - 2026-06-10
+### Changed
+- **기본 임베딩 모델 → `Qwen/Qwen3-Embedding-0.6B`** (대안 `BAAI/bge-m3`). 2026 MTEB 다국어 상위 +
+  실문서 비교(영문 대등~우위, 한국어/다국어 우위) + 경량(~1.2GB)·1024차원 드롭인. ADR 0011.
+- embedder **비대칭 인코딩**: 문서 plain / 쿼리 `embed_query`(Qwen 류 instruction 자동, bge·hash 무프리픽스).
+  `search_info` 가 `embed_query` 사용. `embedder.DEFAULT_MODEL` + env/`models.yaml` 기본값 갱신.
+### Verified
+- 실문서(영문 코딩표준 PDF) bge-m3 vs Qwen3-0.6B 비교: instruction 적용 시 Qwen 대등~우위. 통합 `harness search`
+  가 Qwen+instruction 자동 적용 확인. (기밀 테스트 문서·산출물은 커밋하지 않음)
+
 ## [0.14.0] - 2026-06-10
 ### Added
 - **라우팅 v2 Phase 3 — 하이브리드 검색** `search_all(query,k)`: 벡터(위키+RAG, `kind` 태그) + 질의어와
