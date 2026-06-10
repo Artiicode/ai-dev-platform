@@ -2,6 +2,18 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.13.0] - 2026-06-10
+### Added
+- **라우팅 v2 Phase 2 — 자기유지 엔티티 위키.** `tools/lib/wiki.py`: 엔티티 페이지(`info/wiki/<slug>.md`,
+  frontmatter+`[[links]]`)·INDEX·벡터 임베딩(doc_id=`wiki:<slug>`, 검색 일원화)·dangling 리포트·병합용 delete.
+  route=wiki 시 router 가 소스별 페이지 1차 적재+임베딩. **개념 분할·병합 '지능'은 구동 에이전트가 담당**
+  (키 불필요): MCP `wiki_list/wiki_read/wiki_links/wiki_upsert`(토큰 게이트), `harness wiki [--reindex|--embed|--links]`,
+  `/update-reference` 에 병합 단계 추가.
+- info-index 스키마 `store` 에 `wiki` 추가.
+### Verified
+- 소스 2개→부분 페이지 2개+임베딩→에이전트 병합(1 엔티티+`[[Arm]]`)+부분 삭제→검색이 위키 반환,
+  dangling 리포트, store=wiki 스키마 검증 통과.
+
 ## [0.12.0] - 2026-06-10
 ### Added
 - **라우팅 v2 Phase 1** (`tools/data-to-info/routing.py`): 의미적 route(sql|rag|wiki) 결정 =

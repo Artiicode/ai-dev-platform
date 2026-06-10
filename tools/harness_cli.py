@@ -68,6 +68,26 @@ def cmd_syncskills(a):
     return sync_skills.sync(getattr(a, "node", None), a.link)
 
 
+def cmd_wiki(a):
+    import wiki
+    node = resolve_node(a.node)
+    if a.reindex:
+        print("[wiki] INDEX 재생성: %s" % wiki.reindex(node))
+    if a.embed:
+        import router
+        print("[wiki] 임베딩 청크: %d" % wiki.embed_all(node, router._load_embedder()))
+    if a.links:
+        rep = wiki.link_report(node)
+        print("[wiki] dangling 링크: %s" % (rep["dangling"] or "없음"))
+    if not (a.reindex or a.embed or a.links):
+        pages = wiki.list_pages(node)
+        for s in pages:
+            print("  %-30s links=%s" % (s, wiki.read(node, s)["links"] or "-"))
+        if not pages:
+            print("  (엔티티 페이지 없음 — route=wiki 로 인제스트하거나 wiki_upsert)")
+    return 0
+
+
 def cmd_bootstrap(a):
     import install
     node = resolve_node(a.node); m = install.load_manifest(node)
@@ -206,6 +226,11 @@ def build_parser():
     p = sub.add_parser("sync-skills"); p.add_argument("--node", default=None)
     p.add_argument("--link", action="store_true", help="복제 대신 심볼릭 링크(POSIX 전용)")
     p.set_defaults(fn=cmd_syncskills)
+
+    p = sub.add_parser("wiki"); p.add_argument("node")
+    p.add_argument("--reindex", action="store_true"); p.add_argument("--embed", action="store_true")
+    p.add_argument("--links", action="store_true", help="dangling [[link]] 리포트")
+    p.set_defaults(fn=cmd_wiki)
 
     p = sub.add_parser("bootstrap"); p.add_argument("node"); p.add_argument("--dry-run", action="store_true")
     p.set_defaults(fn=cmd_bootstrap)

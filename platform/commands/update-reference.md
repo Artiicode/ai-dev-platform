@@ -12,5 +12,9 @@ description: 노드 data/update/ 의 참조 자료를 종류에 맞춰 info(SQL/
 절차:
 1. 대상 노드의 `data/update/`에 파일이 있는지 확인(없으면 사용자에게 업로드 위치 안내).
 2. `harness ingest <node>` 실행(먼저 `--dry-run`으로 라우팅 확인 권장).
-3. `info/index.yaml` provenance와 산출(SQL/RAG/md) 요약을 사용자에게 보고. 원본이 `archives/`로 갔는지 확인.
-4. `harness validate <node>` 통과 확인 후, 경과를 `history/worklog/<티켓>.md`에 기록.
+3. **위키 병합(자기유지 위키)**: `route=wiki` 로 들어온 자료는 소스별 페이지로 1차 적재된다. 이후
+   `info/wiki/` 페이지들을 읽고(또는 MCP `wiki_list`/`wiki_read`), **같은 개념은 하나의 엔티티로 병합·
+   중복제거하고 `[[다른개념]]` 으로 링크**해 완성본을 `wiki_upsert`(또는 페이지 편집)로 저장. 그 뒤
+   `harness wiki <node> --reindex --embed` 로 INDEX·임베딩 갱신, `--links` 로 dangling 점검.
+4. `info/index.yaml` provenance와 산출(SQL/RAG/wiki) 요약을 사용자에게 보고. 원본이 `archives/`로 갔는지 확인.
+5. `harness validate <node>` 통과 확인 후, 경과를 `history/worklog/<티켓>.md`에 기록.

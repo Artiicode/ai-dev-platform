@@ -1,6 +1,6 @@
 # 0010. data→info 라우팅 v2 (의미적 route + 힌트/분류기/폴백, md→wiki 로드맵)
 
-- status: accepted (Phase 1 구현)
+- status: accepted (Phase 1–2 구현; Phase 3 예정)
 - date: 2026-06-10
 - related: ADR 0004(ingest), 메모리 llm-wiki-routing-refs
 
@@ -23,8 +23,10 @@ RAG=대규모 비정형, md/LLM-Wiki=소~중 큐레이션·정확답. 하이브�
 ## Roadmap
 
 - **Phase 1(완료):** 위 라우팅 + index 기록. `tools/data-to-info/routing.py`.
-- **Phase 2:** `wiki` 를 Karpathy식 **자기유지 엔티티 위키**(개념별 페이지 + `[[links]]`, AI가 병합/중복제거,
-  sha 멱등)로 격상. 위키 페이지도 임베딩해 벡터 검색에 포함(검색 일원화). 키 없으면 raw md 폴백.
+- **Phase 2(완료):** `wiki` = 자기유지 엔티티 위키. `tools/lib/wiki.py`(결정적 저장/임베딩/링크) — route=wiki
+  시 소스별 페이지 1차 적재 + 벡터 임베딩(검색 일원화). **'지능'(개념 분할·병합)은 구동 에이전트가 담당**
+  (키 불필요): MCP `wiki_list/read/links/upsert`·`harness wiki`·`/update-reference` 로 병합/중복제거/`[[links]]`.
+  store=wiki 추가(스키마). 키 기반 자동 병합(LLM 역할)은 후속 옵션.
 - **Phase 3:** 하이브리드 검색(wiki+vector+sql 통합 조회·병합; SUQL/DSL 경량).
 
 ## Consequences

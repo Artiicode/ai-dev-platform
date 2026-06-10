@@ -20,6 +20,8 @@ L2 기판(info/ 의 md·sql·vector + index.yaml)을 MCP 도구로 노출하는 
   - append_worklog(ticket, entry, token)   : 이력 append(시크릿 차단)
   - record_decision(title, body, token)    : ADR 기록
   - ingest_data(token, dry_run?)           : data/update → info/ (provenance/archives 자동)
+  - wiki_list() / wiki_read(slug) / wiki_links()        : 엔티티 위키 조회(읽기)
+  - wiki_upsert(title, body, token, sources?)           : 위키 페이지 생성/병합 + 임베딩(자기유지 위키)
   - request_approval(action, detail?)      : 위험행동 승인 요청(사람이 최종 승인)
 직접 FS 쓰기도 가능하나 규칙 위반은 pre-commit/CI 훅이 사후 거부한다(② 정책).
 """
@@ -243,6 +245,44 @@ def ingest_data(session_token: str, dry_run: bool = False) -> dict:
     import router
     rc = router.run(NODE_DIR, 8000, 8000, dry_run)
     return {"ok": rc in (0, None), "node": os.path.abspath(NODE_DIR), "dry_run": dry_run}
+
+
+@mcp.tool()
+def wiki_list() -> list:
+    """이 노드의 엔티티 위키 페이지 목록(+ 각 페이지의 [[links]])."""
+    import wiki
+    return [{"slug": s, "links": wiki.read(NODE_DIR, s)["links"]} for s in wiki.list_pages(NODE_DIR)]
+
+
+@mcp.tool()
+def wiki_read(slug: str) -> dict:
+    """엔티티 위키 페이지 원문(frontmatter/body/links)."""
+    import wiki
+    return wiki.read(NODE_DIR, slug) or {"error": "없음: %s" % slug}
+
+
+@mcp.tool()
+def wiki_links() -> dict:
+    """위키 [[link]] 연결 상태 — dangling(미연결) 리포트."""
+    import wiki
+    return wiki.link_report(NODE_DIR)
+
+
+@mcp.tool()
+def wiki_upsert(title: str, body: str, session_token: str, sources: list | None = None) -> dict:
+    """엔티티 위키 페이지 생성/병합(자기유지 위키). 에이전트가 관련 페이지를 읽고 병합·중복제거·[[링크]]한
+    완성본을 넘기면, 결정적으로 저장 + 벡터 임베딩 + INDEX 갱신한다. (강제성 ② 토큰 게이트)"""
+    if not _need_token(session_token):
+        return {"error": "유효한 session_token 필요 — 먼저 begin_session() 호출."}
+    sec = _secret_in(body)
+    if sec:
+        return {"error": "평문 시크릿 의심(%s)." % sec}
+    import wiki
+    res = wiki.upsert(NODE_DIR, title=title, body=body, sources=sources or [])
+    nch = wiki.embed_page(NODE_DIR, res["slug"], _get_embedder())
+    wiki.reindex(NODE_DIR)
+    return {"ok": True, "slug": res["slug"], "path": res["path"],
+            "links": res["links"], "embedded_chunks": nch}
 
 
 @mcp.tool()

@@ -13,7 +13,7 @@
         "required": ["id", "store", "source", "sha256", "ingested_at"],
         "properties": {
           "id": { "type": "string" },
-          "store": { "enum": ["md", "sql", "vector"] },
+          "store": { "enum": ["md", "sql", "vector", "wiki"] },
           "location": { "type": "string", "description": "info/ 내 산출물 경로 또는 테이블/컬렉션명" },
           "source": { "type": "string", "description": "archives/ 내 원본 경로" },
           "sha256": { "type": "string" },

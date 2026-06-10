@@ -22,9 +22,22 @@ import sys
 
 _LIB = os.path.join(os.path.dirname(__file__), "..", "lib")
 sys.path.insert(0, _LIB)
+import re          # noqa: E402
 import provenance  # noqa: E402
 import extractor   # noqa: E402
 import routing     # noqa: E402  (sql|rag|wiki 결정: 힌트 → LLM 분류기 → 크기 폴백)
+import wiki        # noqa: E402  (route=wiki → 엔티티 위키 페이지 + 임베딩)
+
+
+def _title_for(name, text):
+    """엔티티 제목: 텍스트의 첫 H1 우선, 없으면 파일명(힌트 토큰 제거)."""
+    if text:
+        for ln in text.splitlines():
+            if ln.strip().startswith("# "):
+                return ln.strip()[2:].strip()
+    base = os.path.splitext(name)[0]
+    base = re.sub(r"\.(sql|rag|wiki)$", "", base, flags=re.I)
+    return base.replace("_", " ").replace("-", " ").strip() or base
 
 __tool_version__ = "0.3.0"
 STRUCTURED = routing.STRUCTURED
@@ -142,9 +155,17 @@ def run(node_dir, md_max, vector_min, dry_run):
             if embedder is None: embedder = _load_embedder()
             loc = _ingest_vector(node_dir, name, os.path.relpath(src, node_dir), text, embedder)
             store = "vector"
-        else:  # wiki — Phase 1: md(raw). 추출 텍스트면 <name>.md, plain 이면 원본 복사
-            loc = _write_md(node_dir, name, text=text) if text is not None else _write_md(node_dir, name, src=src)
-            store = "md"
+        else:  # wiki — 엔티티 위키 페이지(소스별 1개) + 벡터 임베딩. 병합/[[링크]]는 에이전트가 후처리.
+            if text is None:
+                text = open(src, encoding="utf-8", errors="replace").read()
+            sha = provenance.sha256_of(src)
+            res_w = wiki.upsert(node_dir, title=_title_for(name, text), body=text,
+                                sources=[{"id": name, "sha256": sha}])
+            if embedder is None: embedder = _load_embedder()
+            nch = wiki.embed_page(node_dir, res_w["slug"], embedder)
+            wiki.reindex(node_dir)
+            loc = res_w["path"]; store = "wiki"
+            print("           wiki page %s (+%d chunks 임베딩)" % (res_w["slug"], nch))
 
         res = provenance.record(node_dir, entry_id=name, store=store, location=loc.split(" ")[0],
                                 source=src, tool="router@%s" % __tool_version__,
