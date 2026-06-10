@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "harness-example_project": {
+      "command": ".venv/bin/python",
+      "args": ["mcp/server.py"],
+      "env": {
+        "NODE_DIR": "projects/example_project-node",
+        "HARNESS_EMBED_BACKEND": "local",
+        "HARNESS_EMBED_MODEL": "BAAI/bge-m3"
+      }
+    }
+  }
+}

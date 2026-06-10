@@ -2,6 +2,11 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.16.1] - 2026-06-10
+### Added
+- `.mcp.json`(루트): Claude Code가 `example_project` 노드의 MCP 서버를 **상주**로 띄우도록 등록.
+  모델 로드(18s)는 첫 호출 1회만, 이후 검색 ~80ms·인제스트 로드 0. (CPU 측정상 원격 GPU 불필요)
+
 ## [0.16.0] - 2026-06-10
 ### Changed
 - **기본 임베딩 → `BAAI/bge-m3` 로 환원**(0.15.0 의 Qwen 기본 되돌림). 한국어 KorQuAD 실측에서 bge-m3 가
