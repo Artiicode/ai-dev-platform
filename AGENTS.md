@@ -13,10 +13,12 @@
 > 생성한다(미추적). 임의 파일명이 필요하면 `ln -s AGENTS.md <필요한이름>`.
 
 ## 0. 이 프로젝트가 무엇인가
+- **템플릿 플랫폼**이다. 실제 프로젝트 노드는 들어있지 않고 `projects/_template-node/`(틀)만 있다.
+  → 새 노드는 `./harness init <name>` 으로 만든다(`docs/USAGE.md` 참고). clone 직후엔 `make ready`.
 - `projects/<name>-node/repo/` = 실제 소프트웨어 코드(symlink/clone/submodule).
 - `projects/<name>-node/`(repo 제외) = 그 프로젝트의 **AI 운영 데이터**(context/scenario/history/info/code 규칙).
 - 플랫폼 루트 = 글로벌 AI 설정(`platform/`), 변환 도구(`tools/`), 기판 노출(`mcp/`), 어댑터(`adapters/`).
-- 사용법: `docs/USAGE.md` · 설계: `docs/ARCHITECTURE.md` · 학습: `docs/learning/harness-curriculum.md`.
+- 사용법: `docs/USAGE.md` · 설계: `docs/ARCHITECTURE.md` · 기여/커밋규칙: `CONTRIBUTING.md`.
 
 ## 1. 공통 규칙 (필수)
 1. 작업 시작 전 대상 프로젝트의 `history/ONBOARDING.md`를 읽는다.

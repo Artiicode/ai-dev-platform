@@ -25,6 +25,9 @@ GEMINI.md
 .claude/
 .cursor/
 
+# 인스턴스 wiring(미추적): 어떤 노드를 MCP로 띄울지는 사용자별. 중립 예시는 adapters/mcp.example.json
+.mcp.json
+
 # 상태/락
 **/state/lock.json
 

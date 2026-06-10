@@ -2,14 +2,21 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.17.0] - 2026-06-10
+### Removed
+- 예제 프로젝트 노드 제거 — 템플릿은 `_template-node`(노드 템플릿)만 포함한다. 실제 노드는
+  `harness init <name>` 으로 생성(데이터/프로젝트 specific 내용은 템플릿에 싣지 않는 원칙).
+- 루트 `.mcp.json`(인스턴스 wiring) 미추적(.gitignore) — 중립 예시는 `adapters/mcp.example.json`.
+### Added
+- `CONTRIBUTING.md` — 커밋 컨벤션(Conventional Commits) + 템플릿 순수성 원칙.
+
 ## [0.16.2] - 2026-06-10
 ### Changed
-- 예제 노드 이름 `example_project` → **`example_project`**(예제임이 명확하도록). `.mcp.json`도 갱신
-  (`harness-example_project`, NODE_DIR=projects/example_project-node).
+- 예제 노드를 `example_project` 로 명명(예제임이 명확하도록).
 
 ## [0.16.1] - 2026-06-10
 ### Added
-- `.mcp.json`(루트): Claude Code가 `example_project` 노드의 MCP 서버를 **상주**로 띄우도록 등록.
+- `.mcp.json`(루트): Claude Code가 예제 노드의 MCP 서버를 **상주**로 띄우도록 등록.
   모델 로드(18s)는 첫 호출 1회만, 이후 검색 ~80ms·인제스트 로드 0. (CPU 측정상 원격 GPU 불필요)
 
 ## [0.16.0] - 2026-06-10

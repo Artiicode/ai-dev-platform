@@ -1,4 +1,0 @@
-# 파생 정보 인덱스 — provenance + 라우팅 결정. 스키마: docs/schemas/info-index.schema.json
-# router.py 가 자동 추가. 수동 편집 비권장.
-schema_version: 1
-entries: []
