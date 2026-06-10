@@ -10,7 +10,8 @@ L2 기판(info/ 의 md·sql·vector + index.yaml)을 MCP 도구로 노출하는 
 
 읽기 도구:
   - list_info()                : 이 노드에서 사용 가능한 md/db/vector 요약
-  - search_info(query, k)      : 벡터 RAG 시맨틱 검색 (로컬 임베딩)
+  - search_info(query, k)      : 벡터 시맨틱 검색(위키+RAG, kind 태그)
+  - search_all(query, k)       : 하이브리드 — 벡터(위키+RAG) + 매칭 SQL 테이블 힌트
   - query_sql(sql, db?)        : info/db/*.sqlite 읽기 전용 SQL
   - read_md(name)              : info/md/<name> 원문
   - get_provenance(entry_id?)  : info/index.yaml 출처 기록
@@ -29,6 +30,7 @@ from __future__ import annotations
 import datetime
 import glob
 import os
+import re
 import secrets
 import sqlite3
 import sys
@@ -131,7 +133,27 @@ def search_info(query: str, k: int = 5) -> list:
     qv = emb.embed([query])[0]
     hits = store.search(qv, k)
     store.close()
+    for h in hits:                       # 출처 종류 태깅(위키 vs RAG)
+        h["kind"] = "wiki" if str(h.get("doc_id", "")).startswith("wiki:") else "rag"
     return hits
+
+
+@mcp.tool()
+def search_all(query: str, k: int = 5) -> dict:
+    """하이브리드 검색: 벡터(위키+RAG, kind 태그) + 정형(질의어와 매칭되는 SQL 테이블/컬럼 힌트).
+    정확값이 필요하면 sql_matches 의 테이블을 query_sql 로 조회하라."""
+    hits = [h for h in search_info(query, k) if "error" not in h]
+    toks = [t.lower() for t in re.findall(r"[A-Za-z0-9가-힣]{3,}", query)]
+    sql_matches = []
+    for dbp in glob.glob(os.path.join(INFO, "db", "*.sqlite")):
+        con = sqlite3.connect(dbp)
+        for (tbl,) in con.execute("SELECT name FROM sqlite_master WHERE type='table'"):
+            cols = [r[1] for r in con.execute('PRAGMA table_info("%s")' % tbl)]
+            hay = (tbl + " " + " ".join(cols)).lower()
+            if not toks or any(t in hay for t in toks):
+                sql_matches.append({"db": os.path.basename(dbp), "table": tbl, "columns": cols})
+        con.close()
+    return {"hits": hits, "sql_matches": sql_matches}
 
 
 @mcp.tool()

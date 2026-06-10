@@ -68,6 +68,13 @@ def cmd_syncskills(a):
     return sync_skills.sync(getattr(a, "node", None), a.link)
 
 
+def cmd_wikicompile(a):
+    import wiki_compile
+    res = wiki_compile.auto_merge(resolve_node(a.node))
+    print("[wiki-compile] %s — %s" % (res.get("status"), res.get("msg") or res.get("entities")))
+    return 0 if res.get("status") in ("merged", "empty", "no-llm") else 1
+
+
 def cmd_wiki(a):
     import wiki
     node = resolve_node(a.node)
@@ -124,11 +131,14 @@ def cmd_info(a):
 
 
 def cmd_search(a):
-    hits = _server_for(a.node).search_info(a.query, a.k)
-    for h in hits:
-        if "error" in h:
-            print("[error]", h["error"]); return 1
-        print("%-26s dist=%.3f  %s" % (h["doc_id"], h["distance"], h["text"][:80].replace("\n", " ").strip()))
+    res = _server_for(a.node).search_all(a.query, a.k)
+    for h in res.get("hits", []):
+        print("[%-4s] %-24s dist=%.3f  %s"
+              % (h.get("kind", "?"), h["doc_id"], h["distance"], h["text"][:70].replace("\n", " ").strip()))
+    for m in res.get("sql_matches", []):
+        print("[sql ] %s.%s (%s) — query 로 정확값 조회" % (m["db"], m["table"], ",".join(m["columns"])))
+    if not res.get("hits") and not res.get("sql_matches"):
+        print("(결과 없음)")
     return 0
 
 
@@ -231,6 +241,9 @@ def build_parser():
     p.add_argument("--reindex", action="store_true"); p.add_argument("--embed", action="store_true")
     p.add_argument("--links", action="store_true", help="dangling [[link]] 리포트")
     p.set_defaults(fn=cmd_wiki)
+
+    p = sub.add_parser("wiki-compile"); p.add_argument("node")  # 키 있을 때 LLM 자동 병합(없으면 no-op)
+    p.set_defaults(fn=cmd_wikicompile)
 
     p = sub.add_parser("bootstrap"); p.add_argument("node"); p.add_argument("--dry-run", action="store_true")
     p.set_defaults(fn=cmd_bootstrap)

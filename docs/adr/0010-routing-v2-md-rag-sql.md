@@ -1,6 +1,6 @@
 # 0010. data→info 라우팅 v2 (의미적 route + 힌트/분류기/폴백, md→wiki 로드맵)
 
-- status: accepted (Phase 1–2 구현; Phase 3 예정)
+- status: accepted (Phase 1–3 구현 완료)
 - date: 2026-06-10
 - related: ADR 0004(ingest), 메모리 llm-wiki-routing-refs
 
@@ -27,7 +27,10 @@ RAG=대규모 비정형, md/LLM-Wiki=소~중 큐레이션·정확답. 하이브�
   시 소스별 페이지 1차 적재 + 벡터 임베딩(검색 일원화). **'지능'(개념 분할·병합)은 구동 에이전트가 담당**
   (키 불필요): MCP `wiki_list/read/links/upsert`·`harness wiki`·`/update-reference` 로 병합/중복제거/`[[links]]`.
   store=wiki 추가(스키마). 키 기반 자동 병합(LLM 역할)은 후속 옵션.
-- **Phase 3:** 하이브리드 검색(wiki+vector+sql 통합 조회·병합; SUQL/DSL 경량).
+- **Phase 3(완료):** 하이브리드 검색 `search_all` — 벡터(위키+RAG, kind 태그) + 질의어 매칭 SQL 테이블/컬럼
+  힌트(결정적; 정확값은 query_sql 후속). `harness search` 표시 갱신.
+- **옵션(구현):** `harness wiki-compile` — LLM 역할(키) 있을 때 위키 페이지 무인 자동 병합, 없으면 graceful
+  no-op(에이전트 수동, 키 불필요). `tools/lib/wiki_compile.py`.
 
 ## Consequences
 

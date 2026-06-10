@@ -2,6 +2,17 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.14.0] - 2026-06-10
+### Added
+- **라우팅 v2 Phase 3 — 하이브리드 검색** `search_all(query,k)`: 벡터(위키+RAG, `kind` 태그) + 질의어와
+  매칭되는 SQL 테이블/컬럼 힌트(결정적; 정확값은 `query_sql` 후속). `search_info` 에 `kind` 태그,
+  `harness search` 표시 갱신(위키/RAG/SQL 구분).
+- **옵션: 키 기반 위키 자동 병합** `tools/lib/wiki_compile.py` + `harness wiki-compile`: LLM 역할(키) 있을 때
+  위키 페이지 무인 병합/중복제거/[[링크]], 없으면 graceful no-op(에이전트 수동·키 불필요). ADR 0010 완료.
+### Verified
+- 혼합 자료(sql/rag/wiki) end-to-end: route 분배, search_all 이 위키/RAG hit(kind) + SQL 테이블 힌트 반환,
+  wiki-compile 키없음 graceful no-op, validate 통과.
+
 ## [0.13.0] - 2026-06-10
 ### Added
 - **라우팅 v2 Phase 2 — 자기유지 엔티티 위키.** `tools/lib/wiki.py`: 엔티티 페이지(`info/wiki/<slug>.md`,
