@@ -28,6 +28,13 @@ GEMINI.md
 # 인스턴스 wiring(미추적): 어떤 노드를 MCP로 띄울지는 사용자별. 중립 예시는 adapters/mcp.example.json
 .mcp.json
 
+# User-created nodes/data are NOT tracked, so a cloned template stays identical to upstream
+# and `git pull` / `harness update` applies platform updates without conflicts.
+# Only the node TEMPLATE ships; users create their own nodes with `harness init`.
+# (To version a node yourself: fork and remove this rule, or keep the node in a separate repo.)
+/projects/*
+!/projects/_template-node
+
 # 상태/락
 **/state/lock.json
 

@@ -2,6 +2,17 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.17.2] - 2026-06-10
+### Added
+- **`harness update`** — `git pull --ff-only` 후 의존성/훅/진입규칙을 갱신하는 소비자용 업데이트
+  명령. fast-forward 실패(로컬 이력 분기) 시 자동 머지하지 않고 안내만 한다.
+- README에 **"플랫폼 업데이트 받기 (소비자)"** 섹션 추가.
+### Changed
+- **유저 노드/데이터 git 미추적** — `.gitignore`에 `/projects/*`(단 `_template-node` 제외) 추가.
+  clone 본이 upstream과 바이트 동일하게 유지되어 `git pull`/`harness update`가 충돌 없는
+  fast-forward로 동작한다(템플릿 순수성 원칙: 데이터/프로젝트 specific 내용은 추적하지 않음).
+  노드를 버전관리하려면 별도 repo 사용 권장.
+
 ## [0.17.1] - 2026-06-10
 ### Added
 - **commit-msg 훅(Conventional Commits 강제)** — `tools/hooks/commit-msg`, `harness install-hooks`가 함께 설치.

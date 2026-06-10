@@ -33,10 +33,19 @@ make ready              # 멱등: venv+의존성 + git훅 + 벡터 재생성(arc
 source .venv/bin/activate
 # 오프라인이면:  HARNESS_EMBED_BACKEND=hash make ready
 ```
-`.venv`/git훅/**진입규칙 심링크**(CLAUDE.md 등)/벡터스토어는 git에 안 올라가므로(재생성 가능)
-`make ready`가 복구한다. 진입 규칙은 **정본 `AGENTS.md`만 추적**하고 CLAUDE.md/GEMINI.md/.cursorrules/
-Copilot 파일은 이 정본으로의 심링크로 재생성된다(심링크 미지원 OS는 복제 폴백). 소스·문서·AGENTS.md·
-스킬·archives·md/sql/index 는 git 으로 따라온다. **WSL은 네이티브 FS에 클론**(`/mnt/c` 금지).
+`.venv`/git훅/진입규칙 심링크(CLAUDE.md 등)/벡터스토어, 그리고 **사용자가 만든 노드(`projects/<name>-node/`)**
+는 git에 추적되지 않는다(재생성·로컬 전용). 추적되는 정본은 **코어 + `_template-node` + `AGENTS.md`·스킬·커맨드**뿐.
+→ clone 본이 upstream과 동일하게 유지되어 **`git pull`/`harness update`로 충돌 없이 플랫폼 업데이트**를 받는다.
+`make ready`가 venv·훅·진입규칙·벡터를 복구한다. **WSL은 네이티브 FS에 클론**(`/mnt/c` 금지).
+
+## 플랫폼 업데이트 받기 (소비자)
+이 템플릿을 받아 쓰는 유저는 **노드·데이터를 이 repo에 커밋하지 않는다**(자동 미추적). 그래서 업데이트가 깔끔:
+```bash
+./harness update     # git pull --ff-only + 의존성/훅/진입규칙 갱신 (필요시 make ready 로 벡터 재생성)
+```
+- 노드/데이터 미추적 → clone 본은 항상 upstream과 동일 → 업데이트가 fast-forward.
+- 노드를 버전관리하려면: 노드의 `repo/`(실제 코드)는 그 자체 git, AI 데이터는 **별도 repo** 권장(플랫폼 이력과 안 섞기).
+- 깨끗한 새 시작: GitHub **"Use this template"** 로 새 repo 생성도 가능.
 
 ## 빠른 시작 (Linux / WSL)
 ```bash

@@ -5,6 +5,7 @@
   init       새 프로젝트 노드 생성 (_template-node 복제)
   bootstrap  manifest 기반 repo 링크 + 의존성 설치
   ingest     data/update/* -> info/ (md/sql/vector) 적재
+  update     플랫폼 업데이트 받기 (git pull --ff-only + 의존성/훅/진입규칙 갱신)
   serve      해당 노드의 MCP 서버 실행 (stdio 기본, sse 가능)
   info       노드의 정보 자산 요약 (md/sql/vector)
   search     벡터 RAG 시맨틱 검색
@@ -57,6 +58,32 @@ def cmd_validate(a):
 def cmd_installhooks(a):
     import install_hooks
     return install_hooks.main()
+
+
+def cmd_update(a):
+    """Pull platform updates (fast-forward only) and refresh deps/hooks/entry-rules.
+
+    User nodes/data are gitignored, so a clone stays identical to upstream and the
+    pull is a clean fast-forward. Vectors are derived; rerun `make ready` to rebuild.
+    """
+    import subprocess
+    print("[update] git pull --ff-only")
+    if subprocess.call(["git", "-C", ROOT, "pull", "--ff-only"]) != 0:
+        sys.stderr.write(
+            "[update] fast-forward failed — local history diverged from upstream.\n"
+            "         Your nodes/data should be untracked (see .gitignore). Run\n"
+            "         'git -C %s status' and move any platform edits onto a branch,\n"
+            "         then retry. We do NOT auto-merge to avoid clobbering local work.\n" % ROOT)
+        return 1
+    req = os.path.join(ROOT, "requirements.txt")
+    pip = os.path.join(ROOT, ".venv", "bin", "pip")
+    if os.path.exists(pip) and os.path.exists(req):
+        subprocess.call([pip, "install", "-q", "-r", req])
+    import install_hooks, gen_agent_rules
+    install_hooks.main()
+    gen_agent_rules.generate()
+    print("[update] deps/hooks/entry-rules refreshed. Run 'make ready' to rebuild vectors if data changed.")
+    return 0
 
 
 def cmd_models(a):
@@ -232,6 +259,9 @@ def build_parser():
     p.set_defaults(fn=cmd_validate)
 
     p = sub.add_parser("install-hooks"); p.set_defaults(fn=cmd_installhooks)
+
+    p = sub.add_parser("update", help="플랫폼 업데이트(git pull --ff-only) + 의존성/훅/진입규칙 갱신")
+    p.set_defaults(fn=cmd_update)
 
     p = sub.add_parser("models"); p.set_defaults(fn=cmd_models)
 
