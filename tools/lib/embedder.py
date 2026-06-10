@@ -1,7 +1,8 @@
 """embedder — 로컬 우선 텍스트 임베딩.
 
-기본 모델은 Qwen3-Embedding-0.6B(sentence-transformers, 로컬/오프라인, dim=1024, 다국어·한국어 우수).
-대안: BAAI/bge-m3 (MIT, hybrid). 둘 다 1024차원이라 벡터스토어 드롭인.
+기본 모델은 BAAI/bge-m3(sentence-transformers, 로컬/오프라인, dim=1024, 다국어·한국어 retrieval 우수).
+대안: Qwen/Qwen3-Embedding-0.6B (instruction-tuned). 둘 다 1024차원이라 벡터스토어 드롭인.
+(한국어 KorQuAD 실측에서 bge-m3 가 0.6B 보다 우수 — ADR 0011.)
 모델 미설치 환경에서도 파이프라인이 동작하도록 결정적 'hash' 폴백 제공(테스트/오프라인용).
 설정은 platform/models/models.yaml 의 embedding / HARNESS_EMBED_MODEL 를 따른다.
 
@@ -15,7 +16,7 @@ from typing import List
 __tool_version__ = "0.2.0"
 
 DEFAULT_DIM = 1024  # Qwen3-Embedding-0.6B / bge-m3 공통
-DEFAULT_MODEL = "Qwen/Qwen3-Embedding-0.6B"
+DEFAULT_MODEL = "BAAI/bge-m3"
 _QWEN_QUERY_INSTRUCT = "Instruct: Given a question, retrieve passages that answer it\nQuery: "
 
 

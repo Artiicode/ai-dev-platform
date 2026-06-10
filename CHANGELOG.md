@@ -2,6 +2,14 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.16.0] - 2026-06-10
+### Changed
+- **기본 임베딩 → `BAAI/bge-m3` 로 환원**(0.15.0 의 Qwen 기본 되돌림). 한국어 KorQuAD 실측에서 bge-m3 가
+  Qwen3-0.6B 를 전 지표 우세(R@1 0.85 vs 0.75, MRR 0.913 vs 0.853). Qwen3-0.6B 는 대안 유지. ADR 0011 갱신.
+  (비대칭 인코딩 `embed_query` 는 Qwen 대안용으로 유지 — bge/hash 엔 무해.)
+### Notes
+- 교훈: MTEB 리더보드(대형 모델 기준)를 소형 모델·실제 언어로 일반화 말 것 — 실측이 결정을 뒤집음.
+
 ## [0.15.0] - 2026-06-10
 ### Changed
 - **기본 임베딩 모델 → `Qwen/Qwen3-Embedding-0.6B`** (대안 `BAAI/bge-m3`). 2026 MTEB 다국어 상위 +

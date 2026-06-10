@@ -10,8 +10,8 @@ roles:
   verifier:  { provider: null, model: null, api_key_env: null }
   classifier: { provider: null, model: null, api_key_env: null }  # data→info 라우팅 분류(없으면 coder→크기폴백)
   embedder:
-    provider: local         # 로컬 임베딩(벤더 무관). 기본 Qwen3-Embedding-0.6B. API로 교체 시 api_key_env 추가
-    model: Qwen/Qwen3-Embedding-0.6B   # 대안: BAAI/bge-m3 (MIT, hybrid). 둘 다 1024차원
+    provider: local         # 로컬 임베딩(벤더 무관). 기본 bge-m3. API로 교체 시 api_key_env 추가
+    model: BAAI/bge-m3   # 대안: Qwen/Qwen3-Embedding-0.6B. 둘 다 1024차원 (한국어 실측서 bge 우세, ADR 0011)
 # 다른 프로바이더로 교체 예 (role 블록을 아래처럼):
 #   coder: { provider: openai, model: gpt-4o,            api_key_env: OPENAI_API_KEY }
 #   coder: { provider: gemini, model: gemini-1.5-pro,    api_key_env: GEMINI_API_KEY }
@@ -19,9 +19,9 @@ roles:
 
 # 임베딩 백엔드 (로컬 기본). router/MCP 서버가 참조.
 #   HARNESS_EMBED_BACKEND=local|hash  (env 로 오버라이드)
-#   HARNESS_EMBED_MODEL=Qwen/Qwen3-Embedding-0.6B  (대안: BAAI/bge-m3)
+#   HARNESS_EMBED_MODEL=BAAI/bge-m3  (대안: Qwen/Qwen3-Embedding-0.6B)
 embedding:
-  backend: local          # local(Qwen3-Embedding-0.6B 기본) | hash(오프라인 폴백/테스트)
-  model: Qwen/Qwen3-Embedding-0.6B   # 다국어·한국어 우수, 1024차원. 대안 BAAI/bge-m3
+  backend: local          # local(bge-m3 기본) | hash(오프라인 폴백/테스트)
+  model: BAAI/bge-m3   # 다국어·한국어 retrieval 우수, 1024차원. 대안 Qwen/Qwen3-Embedding-0.6B
   dim: 1024
   store: sqlite-vec        # info/vector/store.db

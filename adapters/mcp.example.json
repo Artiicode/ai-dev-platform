@@ -6,7 +6,7 @@
       "env": {
         "NODE_DIR": "projects/my_proj-node",
         "HARNESS_EMBED_BACKEND": "local",
-        "HARNESS_EMBED_MODEL": "Qwen/Qwen3-Embedding-0.6B"
+        "HARNESS_EMBED_MODEL": "BAAI/bge-m3"
       }
     }
   }

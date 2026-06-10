@@ -56,6 +56,6 @@ cp ~/data/*  projects/my_proj-node/data/update/        # 아무 포맷 투입
 - **1차 타깃: Linux / WSL.** Windows는 추후 웹 GUI(동일 MCP 서버를 `--transport sse`로 재사용)로 접속.
 - 노드는 WSL **네이티브 FS**(예: `~/ai-harness`)에 두세요. `/mnt/c/...` 같은 마운트는 sqlite
   `disk I/O error`가 날 수 있습니다.
-- 기본 임베딩 `Qwen/Qwen3-Embedding-0.6B`(다국어·한국어 우수, 1024차원, ~1.2GB 최초 1회 다운로드).
-  대안 `BAAI/bge-m3`(MIT, hybrid; `HARNESS_EMBED_MODEL`로 교체). 오프라인/테스트는 `HARNESS_EMBED_BACKEND=hash`.
+- 기본 임베딩 `BAAI/bge-m3`(MIT, hybrid, 다국어·한국어 retrieval 우수, 1024차원, ~2GB 최초 1회 다운로드).
+  대안 `Qwen/Qwen3-Embedding-0.6B`(`HARNESS_EMBED_MODEL`로 교체). 오프라인/테스트는 `HARNESS_EMBED_BACKEND=hash`.
 - 이미지 OCR은 `tesseract` 바이너리 필요.
