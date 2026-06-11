@@ -45,6 +45,7 @@ GEMINI.md
 # 일반
 __pycache__/
 *.pyc
+*.zip          # 아카이브 스냅샷은 추적하지 않는다(git 이력이 곧 스냅샷). 배포물은 CI 산출물로.
 .DS_Store
 node_modules/
 **/*.sqlite-journal
