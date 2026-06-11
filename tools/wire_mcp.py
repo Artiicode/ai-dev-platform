@@ -39,6 +39,13 @@ def _check_secrets(servers):
     return bad
 
 
+def _wrap_external(cfg):
+    """Run an external server through mcp_launch.py so it inherits credentials from .env.
+    No env block is written to the config — secrets stay only in .env (gitignored)."""
+    cmd = [cfg.get("command", "")] + [str(x) for x in (cfg.get("args") or [])]
+    return {"command": ".venv/bin/python", "args": ["tools/mcp_launch.py", "--"] + cmd}
+
+
 def _substrate_entry(node):
     return {
         "command": ".venv/bin/python",
@@ -71,7 +78,10 @@ def wire(harness, node=None):
     servers = {}
     if node:
         servers["harness-%s" % node] = _substrate_entry(node)
-    servers.update(external)
+    needed_env = []
+    for n, cfg in external.items():
+        servers[n] = _wrap_external(cfg)
+        needed_env += list((cfg.get("env") or {}).keys())
     if not servers:
         sys.stderr.write("[mcp] nothing to wire — pass --node and/or enable servers in "
                          "platform/mcp-servers.yaml\n")
@@ -92,8 +102,10 @@ def wire(harness, node=None):
     print("[mcp] wired %d server(s) → %s" % (len(servers), cfgpath))
     for n in servers:
         print("   - %s" % n)
-    if external:
-        print("[mcp] secrets: export the ${ENV_VAR}s referenced above before launching the harness.")
+    if needed_env:
+        print("[mcp] 자격증명/설정은 .env (gitignored) 에 넣으세요 — 기동 시 자동 주입(export 불필요):")
+        for k in dict.fromkeys(needed_env):
+            print("        %s=..." % k)
     return 0
 
 

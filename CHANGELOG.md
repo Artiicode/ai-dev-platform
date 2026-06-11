@@ -2,6 +2,14 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.22.0] - 2026-06-11
+### Changed
+- **외부 MCP 자격증명을 `.env` 단일 소스로** (export 폐기). `harness mcp` 가 외부 서버를
+  `tools/mcp_launch.py`(env 주입 exec 셈)로 감싸 기동 → 서버가 루트 `.env`(gitignored)를 자동
+  주입받는다. 셸 `export` 불필요·재부팅에도 유지, 평문 토큰을 `.mcp.json` 에 쓰지 않음(env 블록 미기록).
+  `.env.example` 에 외부 MCP 키 예시 섹션, AGENTS.md §5 플레이북도 ".env 에 넣게 안내"로 갱신.
+  레지스트리(`mcp-servers.yaml`)는 여전히 `${ENV_VAR}` 이름참조만(평문 금지).
+
 ## [0.21.1] - 2026-06-11
 ### Fixed
 - **동시 ingest race 차단.** 같은 노드 inbox(`data/update/`)에 대해 두 ingest가 동시에 돌면 한쪽이

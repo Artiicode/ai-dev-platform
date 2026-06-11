@@ -2,9 +2,10 @@
 # `harness mcp <harness> [--node NAME]` 가 substrate(노드별) 서버 + 아래 enabled 외부 서버를
 # 그 하네스의 MCP 설정 파일(.mcp.json / .cursor/mcp.json …)로 병합한다. 생성물은 모두 .gitignore.
 #
-# 시크릿 정책: 토큰/키 평문 금지. env 값은 반드시 ${ENV_VAR} 참조로만 둔다(값은 셸/.env 에서 주입).
-#   harness 가 ${VAR} 를 확장하지 않으면, 하네스를 띄우는 셸에 해당 변수를 export 해두면
-#   spawn 된 MCP 서버 프로세스가 환경을 상속한다.
+# 시크릿 정책: 토큰/키 평문 금지. 여기 env 값은 ${ENV_VAR} 참조로만 둔다(키 이름 선언용).
+#   실제 값은 루트 `.env`(gitignored)에 넣는다 — 예: JIRA_API_TOKEN=xxxx
+#   `harness mcp` 가 외부 서버를 tools/mcp_launch.py 로 감싸 기동하므로, 서버는 .env 를 자동
+#   주입받는다(셸 export 불필요·재부팅에도 유지·단일 소스). 값에 #/공백이 있으면 .env 에서 따옴표.
 #
 # 아래 servers 는 예시 골격이다 — 실제 패키지명/인자는 각 MCP 서버 문서에 맞게 조정하라.
 servers:
