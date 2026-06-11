@@ -27,6 +27,7 @@ import provenance  # noqa: E402
 import extractor   # noqa: E402
 import routing     # noqa: E402  (sql|rag|wiki 결정: 힌트 → LLM 분류기 → 크기 폴백)
 import wiki        # noqa: E402  (route=wiki → 엔티티 위키 페이지 + 임베딩)
+import locks       # noqa: E402  (동시 ingest 차단: state/ingest.json)
 
 
 def _title_for(name, text):
@@ -121,10 +122,35 @@ def run(node_dir, md_max, vector_min, dry_run):
                    if os.path.isfile(os.path.join(inbox, f)) and not f.startswith("."))
     if not files:
         print("[router] inbox empty"); return 0
-    embedder = None
     archive_dir = os.path.join(node_dir, "archives")
     os.makedirs(archive_dir, exist_ok=True)
 
+    # Dry-run only reads — no lock. A real ingest mutates info/ + moves originals to
+    # archives/, so guard it with a node-scoped ingest lock: a second concurrent ingest
+    # over the same inbox would race (file moved out from under it → FileNotFoundError).
+    # A dead holder's lock is auto-reclaimed (PID/TTL) by locks.acquire.
+    owner = None
+    if not dry_run:
+        owner = "ingest:%d" % os.getpid()
+        try:
+            locks.acquire(node_dir, owner=owner, scope="ingest", name="ingest", ttl=21600)
+        except locks.LockError as e:
+            print("[router] 동시 ingest 차단 — 다른 실행이 진행 중: %s" % e, file=sys.stderr)
+            print("         (끝나길 기다리거나, 죽은 프로세스면 자동 회수 후 재시도하세요)", file=sys.stderr)
+            return 2
+
+    try:
+        return _process(node_dir, files, archive_dir, md_max, vector_min, dry_run)
+    finally:
+        if owner:
+            try:
+                locks.release(node_dir, owner, name="ingest")
+            except Exception:
+                pass
+
+
+def _process(node_dir, files, archive_dir, md_max, vector_min, dry_run):
+    embedder = None
     for src in files:
         name = os.path.basename(src)
         ext = os.path.splitext(src)[1].lower()
@@ -171,7 +197,11 @@ def run(node_dir, md_max, vector_min, dry_run):
                                 source=src, tool="router@%s" % __tool_version__,
                                 route=route, route_by=why)
         print("           %s -> %s [route=%s]" % (res["status"], loc, route))
-        shutil.move(src, os.path.join(archive_dir, name))
+        try:
+            shutil.move(src, os.path.join(archive_dir, name))
+        except FileNotFoundError:
+            # Defense in depth: original already moved (interrupted/raced run). Skip.
+            print("           [skip] 원본이 이미 이동됨: %s" % name, file=sys.stderr)
     return 0
 
 

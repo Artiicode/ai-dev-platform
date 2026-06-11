@@ -15,8 +15,8 @@ class LockError(Exception):
     pass
 
 
-def _path(node_dir):
-    return os.path.join(node_dir, "state", "lock.json")
+def _path(node_dir, name="lock"):
+    return os.path.join(node_dir, "state", "%s.json" % name)
 
 
 def _alive(pid):
@@ -29,8 +29,8 @@ def _alive(pid):
         return True
 
 
-def read(node_dir):
-    p = _path(node_dir)
+def read(node_dir, name="lock"):
+    p = _path(node_dir, name)
     if not os.path.exists(p):
         return None
     try:
@@ -47,21 +47,21 @@ def _stale(info, ttl):
     return (time.time() - info.get("acquired_at", 0)) > ttl
 
 
-def acquire(node_dir, owner, ticket=None, scope="node", ttl=3600):
-    p = _path(node_dir)
+def acquire(node_dir, owner, ticket=None, scope="node", ttl=3600, name="lock"):
+    p = _path(node_dir, name)
     os.makedirs(os.path.dirname(p), exist_ok=True)
     info = {"owner": owner, "ticket": ticket, "scope": scope,
             "pid": os.getpid(), "acquired_at": time.time()}
     try:
         fd = os.open(p, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
     except FileExistsError:
-        cur = read(node_dir)
+        cur = read(node_dir, name)
         if _stale(cur, ttl):
             try:
                 os.remove(p)
             except FileNotFoundError:
                 pass
-            return acquire(node_dir, owner, ticket, scope, ttl)
+            return acquire(node_dir, owner, ticket, scope, ttl, name)
         raise LockError("이미 락 보유 중: owner=%s ticket=%s pid=%s" %
                         (cur.get("owner"), cur.get("ticket"), cur.get("pid")))
     with os.fdopen(fd, "w") as f:
@@ -69,23 +69,23 @@ def acquire(node_dir, owner, ticket=None, scope="node", ttl=3600):
     return info
 
 
-def release(node_dir, owner):
-    cur = read(node_dir)
+def release(node_dir, owner, name="lock"):
+    cur = read(node_dir, name)
     if cur is None:
         return False
     if cur.get("owner") != owner:
         raise LockError("락 소유자 불일치: 보유=%s 시도=%s" % (cur.get("owner"), owner))
-    os.remove(_path(node_dir))
+    os.remove(_path(node_dir, name))
     return True
 
 
 @contextlib.contextmanager
-def lock(node_dir, owner, ticket=None, scope="node", ttl=3600):
-    acquire(node_dir, owner, ticket, scope, ttl)
+def lock(node_dir, owner, ticket=None, scope="node", ttl=3600, name="lock"):
+    acquire(node_dir, owner, ticket, scope, ttl, name)
     try:
         yield
     finally:
         try:
-            release(node_dir, owner)
+            release(node_dir, owner, name)
         except Exception:
             pass

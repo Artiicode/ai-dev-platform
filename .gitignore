@@ -38,8 +38,9 @@ GEMINI.md
 # 부트스트랩 스탬프(머신 로컬): clone 1회 준비 완료 표식. ensure_ready.sh 가 생성/확인.
 .harness-ready
 
-# 상태/락
+# 상태/락(전이적 런타임 — 절대 커밋 금지)
 **/state/lock.json
+**/state/ingest.json
 
 # 일반
 __pycache__/

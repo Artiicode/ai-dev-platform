@@ -2,6 +2,14 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.21.1] - 2026-06-11
+### Fixed
+- **동시 ingest race 차단.** 같은 노드 inbox(`data/update/`)에 대해 두 ingest가 동시에 돌면 한쪽이
+  원본을 `archives/`로 옮긴 사이 다른 쪽이 그 파일을 찾다 `FileNotFoundError` 가 났다. 노드 단위
+  **ingest 전용 락**(`state/ingest.json`, O_EXCL + PID/TTL stale 자동 회수)으로 동시 실행을 차단
+  (두 번째 실행은 rc=2 로 거부, inbox 무손상). 파일 이동은 `FileNotFoundError` 를 흡수해 멱등.
+  `locks` 모듈을 이름 있는 락(work `lock.json` 과 분리)으로 일반화. `.gitignore` 에 `state/ingest.json`.
+
 ## [0.21.0] - 2026-06-11
 ### Added
 - **외부 MCP 레지스트리**(ADR 0014). `platform/mcp-servers.yaml`(옵트인) — Jira/Figma/Bitbucket 등을
