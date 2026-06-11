@@ -2,6 +2,15 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.24.0] - 2026-06-11
+### Added
+- **toolkit/ 번들 도구 노드** — 유저 프로젝트 노드(`projects/*`, 미추적)와 달리 `toolkit/<tool>-node/`
+  는 **버전관리(추적)**되어 플랫폼과 함께 배포된다. 형태는 projects 호환(`repo/` + `manifest.yaml`).
+- **`ai-usage-monitor` 번들** — Cursor/Claude Code 사용량·비용 터미널 대시보드를 `toolkit/` 에 **하드
+  복사**(심링크 아님, 런타임 잔여물 제외). CLI(`--watch`)는 `requests` 만 필요(PySide6 GUI 불필요).
+- **`harness tool <name> -- <args>`** — toolkit 도구를 플랫폼 venv 로 실행(`python -m <entry.module>`,
+  `PYTHONPATH=repo`). 예: `./harness tool ai-usage-monitor -- --watch 5`. AGENTS.md §5 플레이북에 추가.
+
 ## [0.23.0] - 2026-06-11
 ### Fixed
 - **제로베이스 새 프로젝트가 노드 안에서 생성되도록.** 에이전트가 "새 소프트웨어 만들어줘" 요청에

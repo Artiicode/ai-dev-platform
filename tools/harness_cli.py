@@ -8,6 +8,7 @@
   update     플랫폼 업데이트 받기 (git pull --ff-only + 의존성/훅/진입규칙 갱신)
   use        하네스 동적 주입 (enabled 추가 + 진입규칙/스킬 생성): harness use cursor
   mcp        MCP 와이어링 (substrate + 외부 MCP jira/figma 등 → 하네스 설정 병합)
+  tool       toolkit 번들 도구 실행 (harness tool <name> -- <args>)
   serve      해당 노드의 MCP 서버 실행 (stdio 기본, sse 가능)
   info       노드의 정보 자산 요약 (md/sql/vector)
   search     벡터 RAG 시맨틱 검색
@@ -91,6 +92,39 @@ def cmd_update(a):
 def cmd_mcp(a):
     import wire_mcp
     return wire_mcp.wire(a.harness, getattr(a, "node", None))
+
+
+def cmd_tool(a):
+    """Run a bundled toolkit tool: harness tool <name> -- <args>.
+    Executes `python -m <entry.module>` from the tool node's repo/ using the platform venv."""
+    import subprocess
+    import yaml
+    nd = os.path.join(ROOT, "toolkit", "%s-node" % a.name)
+    man = os.path.join(nd, "manifest.yaml")
+    if not os.path.exists(man):
+        avail = []
+        tdir = os.path.join(ROOT, "toolkit")
+        if os.path.isdir(tdir):
+            avail = [d[:-5] for d in sorted(os.listdir(tdir)) if d.endswith("-node")]
+        sys.stderr.write("[tool] 없음: %s. 사용 가능: %s\n" % (a.name, ", ".join(avail) or "(없음)"))
+        return 2
+    spec = (yaml.safe_load(open(man, encoding="utf-8")) or {}).get("tool", {})
+    entry = spec.get("entry", {}) or {}
+    module = entry.get("module")
+    if not module:
+        sys.stderr.write("[tool] manifest 에 tool.entry.module 없음\n")
+        return 2
+    repo = os.path.join(nd, (spec.get("link", {}) or {}).get("path", "repo"))
+    passthru = list(a.args or [])
+    if passthru and passthru[0] == "--":
+        passthru = passthru[1:]
+    if not passthru:
+        passthru = entry.get("watch_args", [])   # default args (e.g. --watch)
+    py = os.path.join(ROOT, ".venv", "bin", "python")
+    if not os.path.exists(py):
+        py = sys.executable
+    env = dict(os.environ, PYTHONPATH=repo + os.pathsep + os.environ.get("PYTHONPATH", ""))
+    return subprocess.call([py, "-m", module] + passthru, cwd=repo, env=env)
 
 
 def cmd_models(a):
@@ -326,6 +360,11 @@ def build_parser():
     p.add_argument("harness", help="claude-code | cursor")
     p.add_argument("--node", default=None, help="이 노드의 substrate 서버도 포함(예: my_proj)")
     p.set_defaults(fn=cmd_mcp)
+
+    p = sub.add_parser("tool", help="toolkit 번들 도구 실행: harness tool <name> -- <args>")
+    p.add_argument("name", help="toolkit 노드 이름(예: ai-usage-monitor)")
+    p.add_argument("args", nargs=argparse.REMAINDER, help="-- 뒤의 인자는 도구로 전달")
+    p.set_defaults(fn=cmd_tool)
 
     p = sub.add_parser("wiki"); p.add_argument("node")
     p.add_argument("--reindex", action="store_true"); p.add_argument("--embed", action="store_true")

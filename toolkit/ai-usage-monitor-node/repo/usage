@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Convenience launcher for the terminal usage dashboard (works in WSL/Linux).
+# Uses the project venv if present, else the system python.
+set -euo pipefail
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+py="$here/.venv/bin/python"
+[ -x "$py" ] || py="python3"
+exec "$py" -m ai_usage_monitor.cli "$@"

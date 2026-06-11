@@ -1,0 +1,16 @@
+# Toolkit tool node — a bundled, version-controlled platform tool (hard copy, not symlink).
+# Unlike user project nodes under projects/ (git-untracked), toolkit nodes ARE tracked so the
+# tool ships and evolves with the platform. Shape stays projects-compatible (repo/ + manifest).
+tool:
+  name: ai-usage-monitor
+  kind: tool
+  summary: "Cursor/Claude Code 토큰 사용량·비용 터미널 대시보드 (usage --watch)"
+  origin: /home/yong/code/ai/ai-tools/tool-generator-platform/ai-usage-monitor   # 하드 복사 출처(참고)
+  link:
+    type: path          # 코드가 repo/ 안에 직접 존재(하드 복사)
+    path: repo
+  entry:
+    module: ai_usage_monitor.cli     # python -m <module> 로 실행
+    watch_args: ["--watch", "5"]     # `harness tool ai-usage-monitor --watch` 기본 인자
+  # CLI(--watch) 는 stdlib + requests 만 필요(플랫폼 venv 에 이미 있음). PySide6 는 GUI 전용/불필요.
+  requirements: [requests]

@@ -50,3 +50,4 @@ __pycache__/
 node_modules/
 **/*.sqlite-journal
 **/*.db-journal
+.pytest_cache/
