@@ -9,6 +9,7 @@
   use        하네스 동적 주입 (enabled 추가 + 진입규칙/스킬 생성): harness use cursor
   mcp        MCP 와이어링 (substrate + 외부 MCP jira/figma 등 → 하네스 설정 병합)
   tool       toolkit 번들 도구 실행 (harness tool <name> -- <args>)
+  start      작업 세션 시작 (하네스 선택/기본값 + tmux: 좌 claude/우상 git watch/우하 usage)
   serve      해당 노드의 MCP 서버 실행 (stdio 기본, sse 가능)
   info       노드의 정보 자산 요약 (md/sql/vector)
   search     벡터 RAG 시맨틱 검색
@@ -125,6 +126,13 @@ def cmd_tool(a):
         py = sys.executable
     env = dict(os.environ, PYTHONPATH=repo + os.pathsep + os.environ.get("PYTHONPATH", ""))
     return subprocess.call([py, "-m", module] + passthru, cwd=repo, env=env)
+
+
+def cmd_start(a):
+    import session
+    skip = True if a.skip_perms else (False if a.no_skip_perms else None)
+    return session.start(session=a.session, harness=a.harness, skip_perms=skip,
+                         repo=a.repo, use_tmux=not a.no_tmux, attach=not a.no_attach)
 
 
 def cmd_models(a):
@@ -365,6 +373,16 @@ def build_parser():
     p.add_argument("name", help="toolkit 노드 이름(예: ai-usage-monitor)")
     p.add_argument("args", nargs=argparse.REMAINDER, help="-- 뒤의 인자는 도구로 전달")
     p.set_defaults(fn=cmd_tool)
+
+    p = sub.add_parser("start", help="작업 세션 시작: 하네스 선택/기본값 + tmux(좌 claude/우상 git watch/우하 usage)")
+    p.add_argument("session", nargs="?", default="harness", help="tmux 세션 이름(예: els2.0)")
+    p.add_argument("--harness", choices=["claude-code", "cursor"], default=None, help="기본값 무시하고 지정")
+    p.add_argument("--skip-perms", action="store_true", help="claude --dangerously-skip-permissions 로 실행")
+    p.add_argument("--no-skip-perms", action="store_true", help="claude 를 기본 권한으로 실행")
+    p.add_argument("--repo", default=None, help="우상단 git watch 대상(기본 플랫폼 루트)")
+    p.add_argument("--no-tmux", action="store_true", help="tmux 없이 claude 만 실행")
+    p.add_argument("--no-attach", action="store_true", help="세션만 구성하고 attach 안 함(테스트/원격)")
+    p.set_defaults(fn=cmd_start)
 
     p = sub.add_parser("wiki"); p.add_argument("node")
     p.add_argument("--reindex", action="store_true"); p.add_argument("--embed", action="store_true")

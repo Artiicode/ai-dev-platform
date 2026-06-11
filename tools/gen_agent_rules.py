@@ -119,6 +119,7 @@ def _platform_body() -> str:
 | "검색/찾아줘" (의미 검색) | MCP `search_info`/`search_all` 또는 `./harness search <node> "<질의>"` |
 | "테스트/검증 돌려줘" | `./harness verify <node>` (결과는 자동으로 ONBOARDING 에 반영) |
 | "사용량/토큰 비용 보여줘 (usage)" | `./harness tool ai-usage-monitor -- --watch` (번들 도구; `toolkit/` 참고) |
+| "작업 세션/tmux 띄워줘" | `./harness start [세션이름]` (좌 claude/우상 git watch/우하 usage; 기본 하네스·claude 플래그를 묻고 `.harness-local.json` 에 저장) |
 | "플랫폼 업데이트 받아줘" | `./harness update` (git pull --ff-only + 의존성/훅/규칙 갱신) |
 | 위험행동(ssh/scp/push/deploy/삭제) | `platform/policies/approval-gates.md` 게이트 통과 + MCP `request_approval` (사람이 최종 승인) |
 

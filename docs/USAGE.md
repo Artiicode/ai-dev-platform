@@ -211,6 +211,26 @@ source .venv/bin/activate
 - 노드를 버전관리하려면: 노드 `repo/`(실제 코드)는 그 자체 git, AI 데이터는 **별도 repo** 권장(플랫폼
   이력과 안 섞기). 깨끗한 새 시작은 GitHub **"Use this template"**.
 
+## 11. 번들 도구 + 작업 세션 (toolkit · harness start)
+- **번들 도구(toolkit):** 버전관리되는 플랫폼 도구는 `toolkit/<tool>-node/` 에 둡니다(유저 프로젝트 노드와
+  달리 추적됨, 하드 복사). 실행: `./harness tool <name> -- <args>`.
+  예: `./harness tool ai-usage-monitor -- --watch 5` (Cursor/Claude Code 사용량·비용 대시보드).
+- **작업 세션:** `./harness start [세션이름]` — 처음엔 기본 하네스(claude-code/cursor)와 claude 실행
+  플래그(`--dangerously-skip-permissions` 여부)를 물어 `.harness-local.json`(머신-로컬, 미추적)에 저장하고,
+  선택한 하네스의 진입규칙을 주입(`harness use`)한 뒤 **tmux 세션**을 띄웁니다:
+  ```
+  ┌─────────────┬──────────────────────┐
+  │             │ 우상: git status watch │   (에이전트가 만드는 파일변경 실시간)
+  │  좌: claude  ├──────────────────────┤
+  │             │ 우하: usage --watch    │   (ai-usage-monitor)
+  └─────────────┴──────────────────────┘
+  ```
+  옵션: `--harness`, `--skip-perms`/`--no-skip-perms`, `--repo <git watch 대상>`, `--no-tmux`, `--no-attach`.
+  예: `./harness start els2.0 --skip-perms --repo projects/els2.0-node/repo`.
+  > tmux 필요(`sudo apt-get install tmux`). 이미 tmux 안이면 새 세션 attach가 중첩될 수 있으니 평범한
+  > 터미널에서 실행 권장. (참고: "에이전트 작업 화면을 별도 pane에 실시간 미러"는 claude/cursor가 지원하지
+  > 않아 불가 — 우상단은 그 근사치인 git 변경 감시입니다.)
+
 ## 10. 하네스 주입 (harness use) — 어떤 AI CLI/IDE든
 핵심 플랫폼은 하네스 중립이고, 쓸 하네스만 옵트인합니다(`platform/harnesses.yaml`). 진입규칙·스킬은
 정본(`AGENTS.md` 등) 1벌만 추적하고, 활성 하네스의 파일은 그 정본으로의 심링크로 로컬 생성(미추적)됩니다.

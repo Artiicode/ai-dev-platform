@@ -2,6 +2,16 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.25.0] - 2026-06-11
+### Added
+- **`harness start [세션이름]`** — 작업 세션 런처. 기본 하네스(claude-code/cursor)·claude 실행 플래그
+  (`--dangerously-skip-permissions` 여부)를 1회 묻고 `.harness-local.json`(머신-로컬·미추적)에 저장,
+  선택 하네스의 진입규칙을 주입(`harness use`)한 뒤 **tmux 세션**을 띄운다: 좌=claude, 우상=git status
+  watch(에이전트 파일변경 근사 미러), 우하=ai-usage-monitor `--watch`. 옵션 `--harness/--skip-perms/
+  --no-skip-perms/--repo/--no-tmux/--no-attach`. bare `./harness` 는 그대로 help(비대화·CI 안전).
+  - 참고: claude/cursor 가 자기 작업을 별도 pane 으로 스트리밍하는 기능이 없어 "에이전트 실시간 미러"는
+    불가 — 우상단은 근사치(git 변경 감시).
+
 ## [0.24.0] - 2026-06-11
 ### Added
 - **toolkit/ 번들 도구 노드** — 유저 프로젝트 노드(`projects/*`, 미추적)와 달리 `toolkit/<tool>-node/`
