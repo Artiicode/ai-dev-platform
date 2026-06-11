@@ -1,7 +1,7 @@
 ---
 title: "ai-autodev-harness — 사용법 (Linux / WSL)"
-version: 0.10.1
-last_updated: 2026-06-08
+version: 0.22.0
+last_updated: 2026-06-11
 status: living
 audience: [human, ai-agent]
 ---
@@ -53,7 +53,14 @@ cp -n .env.example .env        # 사용할 모델 키 채우기(models.yaml 참�
 ./harness install-hooks                           # pre-commit 훅 설치(git init 후; CI는 항상)
 ./harness models                                  # 역할별 모델/키 가용성 점검(LiteLLM, 네트워크 불필요)
 ./harness sync-skills [--node NAME] [--link]      # platform/skills|commands/* → 활성 하네스 배포(기본 복제)
+./harness update                                  # 플랫폼 업데이트(git pull --ff-only + 의존성/훅/규칙 갱신)
+./harness use   <claude-code|cursor|gemini|copilot>  # 하네스 동적 주입(진입규칙·스킬 로컬 생성)
+./harness mcp   <claude-code|cursor> [--node NAME]   # MCP 와이어링(substrate + 외부 MCP → 하네스 설정 병합)
 ```
+
+> 인자 없이 `./harness` 만 치면 도움말을 출력합니다. 모든 서브커맨드는 `./harness <cmd> -h` 로 옵션 확인.
+> **자연어 운영:** 유저가 에이전트에게 "프로젝트 붙여줘 / cursor 쓸게 / jira MCP 붙여줘 / 인제스트 / 검증"
+> 처럼 말하면, 에이전트는 진입규칙 **AGENTS.md §5 운영 플레이북**에 따라 위 명령으로 일관되게 수행합니다.
 
 > **기존 로컬 프로젝트를 심링크로 연결:** `./harness init my_proj --link-type symlink --target /abs/path/to/my_proj`
 > 후 `./harness bootstrap projects/my_proj-node`. 대상 디렉토리가 존재해야 하며, 빈 `repo/`는 자동 대체됩니다.
@@ -114,6 +121,23 @@ Windows의 Claude Desktop MCP 설정에서 `wsl.exe`로 진입해 실행합니�
 ./harness query  my_proj "SELECT label,x,y,z FROM robot_poses"
 ```
 
+### (d) 외부 MCP 붙이기 (Jira/Figma/Bitbucket 등) — 레지스트리 + `.env`
+플랫폼 substrate 서버는 `mcpServers` 의 한 항목일 뿐이고, MCP 클라이언트는 여러 서버를 동시에 씁니다.
+외부 MCP는 **옵트인 레지스트리**로 선언하고 `harness mcp` 가 하네스 설정으로 병합합니다.
+```bash
+# 1) platform/mcp-servers.yaml 에서 사용할 서버를 enabled 에 추가 (정의 없으면 servers: 에 골격 추가)
+#    예) enabled: ["jira", "figma"]   (env 값은 ${ENV_VAR} 이름참조만 — 평문 토큰 금지)
+# 2) 자격증명은 루트 .env (gitignored, 단일 소스) 에 넣는다 — export 아님, 재부팅에도 유지
+#    JIRA_URL=https://your.atlassian.net
+#    JIRA_API_TOKEN=...
+# 3) 병합: substrate(노드) + enabled 외부 서버 → 하네스 MCP 설정(.mcp.json / .cursor/mcp.json)
+./harness mcp claude-code --node my_proj
+```
+- 외부 서버는 `tools/mcp_launch.py`(env 주입 셈)로 감싸 기동되어 **`.env` 를 자동 주입**받습니다 →
+  셸 `export` 불필요, 평문 토큰이 `.mcp.json` 에 기록되지 않음.
+- 새 외부 MCP 지원 = 코드 수정 없이 `platform/mcp-servers.yaml` 에 블록 한 개 추가.
+- 값에 `#`·공백이 있으면 `.env` 에서 따옴표로 감싸세요. 이미 export 된 변수는 `.env` 가 덮어쓰지 않습니다.
+
 ## 5. 디버그/배포 시나리오
 `projects/<name>-node/scenario/debug.md`가 진실 원본(빌드→ssh→scp→실행→로그→커밋).
 원격 실행·커밋 등 위험 단계는 `platform/policies/approval-gates.md`의 사람 승인 게이트를 통과합니다.
@@ -133,7 +157,15 @@ Windows에서 브라우저로 대화하는 GUI는 **동일 MCP 서버를 재사�
   `state/lock.json`에 기록되며, 프로세스 사망/TTL 초과 시 자동 회수. 해제는 `harness unlock`.
 - **작업 격리:** `harness worktree <name> --ticket T` 로 repo 의 git worktree(독립 작업트리/브랜치) 생성.
 - **온보딩 자동화:** `harness onboard <name>` — worklog/adr/info/manifest 를 스캔해 ONBOARDING.md 재생성.
-  티켓 종료/주요 결정 후 실행하면 다음 에이전트가 최신 상태를 즉시 파악.
+- **이력 자동 인계(수동 onboard 불필요):** `history/ONBOARDING.md`(큐레이션 인계서)가 이력이 바뀔 때마다
+  자동 재생성됩니다 — MCP `append_worklog`/`record_decision`/`ingest_data`, `harness verify`. 브리프는
+  worklog·ADR뿐 아니라 **노드 `repo/` 의 실제 git 커밋**(이슈/디버깅/기능)과 **verify 테스트 결과**까지
+  자동 수집합니다. MCP `begin_session` 이 이 브리프를 `onboarding` 필드로 반환하므로, **새 에이전트는
+  핸드셰이크만으로 이전 이력을 인계받습니다.** (작업 경과·결정은 반드시 worklog/ADR에 남길 것 — 안 남기면
+  다음 에이전트가 못 봄.)
+- **동시 ingest 안전:** 같은 노드에 ingest 가 동시에 돌면 race(원본이 archives로 옮겨지는 사이 충돌)가
+  나므로, ingest 는 노드 단위 락(`state/ingest.json`)으로 직렬화됩니다. 두 번째 동시 실행은 거부(rc=2,
+  inbox 무손상)되고, 죽은 프로세스의 락은 자동 회수됩니다.
 - **디버그/배포:** `harness debug <name> --ticket T --name N --build PATH [--run-cmd C]`.
   기본 dry-run(명령만 출력). `--execute` 시 노드 락 + 위험 단계별 승인 게이트(원격 전송/실행/커밋).
   비대화 자동화는 `HARNESS_AUTO_APPROVE=1` 로 명시 승인. 모든 승인은 `state/audit.log` 에 감사 기록.
@@ -147,3 +179,33 @@ Windows에서 브라우저로 대화하는 GUI는 **동일 MCP 서버를 재사�
 - **bge-m3 다운로드 지연/실패:** 임시로 `HARNESS_EMBED_BACKEND=hash`. 캐시는 `~/.cache/huggingface`.
 - **이미지가 인제스트 안 됨:** `tesseract` 미설치 → `sudo apt-get install tesseract-ocr`.
 - **검증:** `make test` (오프라인 hash 임베더로 전체 파이프라인 스모크).
+
+## 9. 받아서 쓰기 · 자동 준비 · 업데이트 (소비자 워크플로)
+이 플랫폼은 **템플릿**입니다 — 유저는 clone 후 자기 노드를 만들어 씁니다. 유저가 만든 노드
+(`projects/<name>-node/`)는 git **미추적**(`.gitignore`)이라, clone 본이 upstream과 동일하게 유지되어
+업데이트가 충돌 없는 fast-forward 가 됩니다.
+
+```bash
+git clone <remote> ai-dev-platform && cd ai-dev-platform
+make ready                  # 1회 준비 (또는 ./harness 첫 실행 시 자동) — venv/훅/진입규칙/벡터
+source .venv/bin/activate
+# … 노드 생성·작업 …
+./harness update            # 플랫폼 업데이트: git pull --ff-only + 의존성/훅/진입규칙 갱신
+```
+- **자동 1회 준비:** clone 본은 venv/git훅/진입규칙 심링크/벡터가 비어 있습니다. `./harness <명령>` 첫
+  실행 시 `scripts/ensure_ready.sh` 가 자동으로 1회 준비하고 `.harness-ready`(머신-로컬 표식)를 남깁니다
+  (있으면 건너뜀). MCP 서버 기동·`git pull`(post-merge 훅) 시에도 진입규칙·훅을 self-heal 합니다.
+  `HARNESS_SKIP_READY=1` 로 우회. **셸 한 번도 없이 claude/cursor만 연 완전 신선 클론**은 venv가 없어
+  자동화가 불가하니, 그 경우만 `make ready` 를 1회 수동 실행하세요(AGENTS.md §0 가드 지침).
+- 노드를 버전관리하려면: 노드 `repo/`(실제 코드)는 그 자체 git, AI 데이터는 **별도 repo** 권장(플랫폼
+  이력과 안 섞기). 깨끗한 새 시작은 GitHub **"Use this template"**.
+
+## 10. 하네스 주입 (harness use) — 어떤 AI CLI/IDE든
+핵심 플랫폼은 하네스 중립이고, 쓸 하네스만 옵트인합니다(`platform/harnesses.yaml`). 진입규칙·스킬은
+정본(`AGENTS.md` 등) 1벌만 추적하고, 활성 하네스의 파일은 그 정본으로의 심링크로 로컬 생성(미추적)됩니다.
+```bash
+./harness use cursor        # enabled 에 cursor 추가 + .cursorrules(→AGENTS.md) + 스킬 로컬 생성
+./harness use gemini        # GEMINI.md, ./harness use copilot → .github/copilot-instructions.md
+```
+유저가 에이전트에게 "cursor 쓸게" 라고 하면 에이전트가 이 명령을 실행하면 됩니다(AGENTS.md §5 플레이북).
+MCP까지 필요하면 §4(d) 의 `./harness mcp <harness>`.
