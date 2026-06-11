@@ -62,6 +62,14 @@ def run(node_dir):
     os.makedirs(os.path.dirname(rp), exist_ok=True)
     open(rp, "w", encoding="utf-8").write("\n".join(lines))
 
+    # Fold the fresh test result into the curated brief (best-effort) so a later agent sees it.
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import gen_onboarding
+        gen_onboarding.generate(node_dir)
+    except Exception:
+        pass
+
     failed_req = [n for n, ok, req, _ in results if req and not ok]
     passed = sum(1 for _, ok, _, _ in results if ok)
     print("[verify] %d/%d PASS · 리포트: %s" % (passed, len(results), os.path.relpath(rp, node_dir)))

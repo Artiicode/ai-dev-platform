@@ -92,6 +92,12 @@ def _platform_body() -> str:
 3) plan → verify → implement → 4) 경과를 `history/worklog/<티켓>.md`에 기록 →
 5) 위험행동(ssh/scp/push/deploy/삭제)은 `platform/policies/approval-gates.md` 게이트 통과.
 
+> **이력 자동 인계:** `history/ONBOARDING.md`는 worklog·ADR·**repo 커밋**·**verify 테스트 결과**를
+> 모아 자동 생성되는 큐레이션 인계서다. MCP `begin_session` 이 이를 반환하고, `append_worklog`/
+> `record_decision`/`ingest`/`harness verify`/`onboard` 시 자동 갱신된다. **새 에이전트는 이걸로 이전
+> 이력을 인계받으므로, 너의 진행 경과(`append_worklog`)·결정(`record_decision`)을 반드시 남겨라 —
+> 안 남기면 다음 에이전트가 못 본다.**
+
 ## 4. 검증 (커밋 전 필수)
 `python tools/validate_node.py <node>` 통과해야 한다(pre-commit 훅이 자동 실행, CI에서도 검사).
 직접 파일쓰기는 허용되나, 규칙 위반은 훅이 사후 거부한다.

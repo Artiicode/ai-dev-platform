@@ -213,12 +213,30 @@ def begin_session(agent: str, ticket: str | None = None) -> dict:
     쓰기 도구는 이 토큰을 요구하므로, 에이전트는 규칙을 받은 뒤에야 기판을 변경할 수 있다."""
     token = secrets.token_hex(16)
     _SESSIONS[token] = {"agent": agent, "ticket": ticket, "started": _now()}
+    _refresh_onboarding()   # ensure the inherited brief reflects the latest history
     return {"session_token": token, "node": os.path.abspath(NODE_DIR), "rules": _rules_text(),
-            "must": "쓰기 호출 시 session_token 전달. 위반 산출물은 커밋/CI 훅이 거부함."}
+            "onboarding": _onboarding_text(),
+            "must": "쓰기 호출 시 session_token 전달. 위반 산출물은 커밋/CI 훅이 거부함. "
+                    "onboarding 은 이전 작업 이력(활성 티켓·결정·repo 커밋·테스트)의 큐레이션 인계서다 — 먼저 읽어라."}
 
 
 def _need_token(token):
     return token in _SESSIONS
+
+
+def _refresh_onboarding():
+    """Regenerate the curated ONBOARDING brief so the next agent inherits current history
+    (active tickets, decisions, repo commits, test results). Best-effort — never fail a write."""
+    try:
+        import gen_onboarding
+        gen_onboarding.generate(NODE_DIR)
+    except Exception:
+        pass
+
+
+def _onboarding_text():
+    ob = os.path.join(NODE_DIR, "history", "ONBOARDING.md")
+    return open(ob, encoding="utf-8").read() if os.path.exists(ob) else ""
 
 
 @mcp.tool()
@@ -238,6 +256,7 @@ def append_worklog(ticket: str, entry: str, session_token: str) -> dict:
             f.write("---\nticket: %s\nstatus: in-progress\nupdated: %s\n---\n\n## 진행 로그 (append-only)\n"
                     % (ticket, _now()))
         f.write("\n- [%s] %s\n" % (_now(), entry))
+    _refresh_onboarding()
     return {"ok": True, "path": os.path.relpath(path, NODE_DIR), "created": created}
 
 
@@ -255,6 +274,7 @@ def record_decision(title: str, body: str, session_token: str) -> dict:
     slug = "".join(c if c.isalnum() else "-" for c in title.lower()).strip("-")[:40] or "decision"
     path = os.path.join(adr, "%04d-%s.md" % (n, slug))
     open(path, "w", encoding="utf-8").write("# %04d. %s\n\n- date: %s\n\n%s\n" % (n, title, _now(), body))
+    _refresh_onboarding()
     return {"ok": True, "path": os.path.relpath(path, NODE_DIR)}
 
 
@@ -266,6 +286,8 @@ def ingest_data(session_token: str, dry_run: bool = False) -> dict:
         return {"error": "유효한 session_token 필요."}
     import router
     rc = router.run(NODE_DIR, 8000, 8000, dry_run)
+    if not dry_run:
+        _refresh_onboarding()
     return {"ok": rc in (0, None), "node": os.path.abspath(NODE_DIR), "dry_run": dry_run}
 
 

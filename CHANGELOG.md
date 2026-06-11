@@ -2,6 +2,16 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.20.0] - 2026-06-11
+### Added
+- **작업 이력 자동 인계**(ADR 0013). 새 에이전트가 이전 작업(이슈·디버깅·결정·테스트)을 자동으로 이어본다.
+  - `gen_onboarding` 가 **repo git 커밋 로그** + **verify 테스트 결과**(`state/verify-report.md`)를 브리프에
+    자동 수집(수기 worklog 없이도 최소 이력 확보).
+  - `ONBOARDING.md` 자동 재생성 트리거: MCP `append_worklog`/`record_decision`/`ingest_data`,
+    `harness verify`. 수동 `harness onboard` 불필요.
+  - MCP `begin_session` 이 최신 ONBOARDING을 `onboarding` 필드로 **반환** → 핸드셰이크만으로 이력 인계.
+  - AGENTS.md §3에 이력 자동 인계 + 로그 작성 의무 명시.
+
 ## [0.19.0] - 2026-06-11
 ### Added
 - **`harness use <harness>`** — 하네스 동적 주입. 이름(claude-code|cursor|gemini|copilot)만 받아

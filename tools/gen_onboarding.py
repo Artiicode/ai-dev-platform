@@ -32,6 +32,20 @@ def _frontmatter(path):
     return fm, body
 
 
+def _git_log(repo_dir, n):
+    """노드 repo 의 최근 커밋 한 줄 요약. repo 는 보통 (심링크된) 실제 프로젝트 git 작업트리이므로
+    이슈/디버깅/기능 작업이 커밋 메시지로 자동 축적된 이력원이다. git 아니면 빈 리스트."""
+    import subprocess
+    if not os.path.isdir(repo_dir):
+        return []
+    try:
+        r = subprocess.run(["git", "-C", repo_dir, "log", "--oneline", "--no-decorate", "-n", str(n)],
+                           capture_output=True, text=True, timeout=10)
+        return [ln for ln in r.stdout.strip().splitlines() if ln] if r.returncode == 0 else []
+    except Exception:
+        return []
+
+
 def _section(body, header):
     """'## header' 아래 텍스트 추출(다음 ## 전까지)."""
     m = re.search(r"^##+\s*%s.*?$(.*?)(^##\s|\Z)" % re.escape(header), body,
@@ -114,6 +128,23 @@ def generate(node_dir):
             L.append("- **%s**: %s" % (tk, txt.replace("\n", " ")[:200]))
     else:
         L.append("- (없음)")
+    L.append("")
+
+    L.append("## 최근 코드 작업 (repo git)")
+    gitlog = _git_log(os.path.join(node_dir, "repo"), 12)
+    if gitlog:
+        L.extend("- %s" % ln for ln in gitlog)
+    else:
+        L.append("- (repo 가 git 작업트리가 아니거나 커밋 없음)")
+    L.append("")
+
+    L.append("## 테스트/검증 최근 결과")
+    vr = os.path.join(node_dir, "state", "verify-report.md")
+    if os.path.exists(vr):
+        rep = open(vr, encoding="utf-8").read().strip().splitlines()
+        L.extend(rep[:14])
+    else:
+        L.append("- (verify 미실행 — `harness verify <node>`)")
     L.append("")
 
     L.append("## 시작 절차")
