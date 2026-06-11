@@ -7,6 +7,7 @@
   ingest     data/update/* -> info/ (md/sql/vector) 적재
   update     플랫폼 업데이트 받기 (git pull --ff-only + 의존성/훅/진입규칙 갱신)
   use        하네스 동적 주입 (enabled 추가 + 진입규칙/스킬 생성): harness use cursor
+  mcp        MCP 와이어링 (substrate + 외부 MCP jira/figma 등 → 하네스 설정 병합)
   serve      해당 노드의 MCP 서버 실행 (stdio 기본, sse 가능)
   info       노드의 정보 자산 요약 (md/sql/vector)
   search     벡터 RAG 시맨틱 검색
@@ -85,6 +86,11 @@ def cmd_update(a):
     gen_agent_rules.generate()
     print("[update] deps/hooks/entry-rules refreshed. Run 'make ready' to rebuild vectors if data changed.")
     return 0
+
+
+def cmd_mcp(a):
+    import wire_mcp
+    return wire_mcp.wire(a.harness, getattr(a, "node", None))
 
 
 def cmd_models(a):
@@ -315,6 +321,11 @@ def build_parser():
     p = sub.add_parser("use", help="하네스 동적 주입: enabled 추가 + 진입규칙/스킬 생성")
     p.add_argument("harness", help="claude-code | cursor | gemini | copilot")
     p.set_defaults(fn=cmd_use)
+
+    p = sub.add_parser("mcp", help="MCP 와이어링: substrate(노드) + 외부 MCP(jira/figma 등)를 하네스 설정으로 병합")
+    p.add_argument("harness", help="claude-code | cursor")
+    p.add_argument("--node", default=None, help="이 노드의 substrate 서버도 포함(예: my_proj)")
+    p.set_defaults(fn=cmd_mcp)
 
     p = sub.add_parser("wiki"); p.add_argument("node")
     p.add_argument("--reindex", action="store_true"); p.add_argument("--embed", action="store_true")

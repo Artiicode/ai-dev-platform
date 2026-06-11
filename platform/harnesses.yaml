@@ -10,9 +10,11 @@ harnesses:
     rules_file:   CLAUDE.md            # 정본 AGENTS.md 로 심링크(미지원 OS는 복제)
     skills_dir:   .claude/skills       # <slug>/SKILL.md
     commands_dir: .claude/commands     # <slug>.md
+    mcp_config:   .mcp.json            # `harness mcp claude-code` 병합 대상(미추적)
   cursor:
     rules_file:   .cursorrules
     skills_dir:   .cursor/skills
+    mcp_config:   .cursor/mcp.json     # `harness mcp cursor` 병합 대상(미추적)
   gemini:
     rules_file:   GEMINI.md
   copilot:

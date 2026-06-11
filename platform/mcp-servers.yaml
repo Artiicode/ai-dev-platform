@@ -1,0 +1,30 @@
+# 외부 MCP 서버 레지스트리 (옵트인). harnesses.yaml 과 같은 철학.
+# `harness mcp <harness> [--node NAME]` 가 substrate(노드별) 서버 + 아래 enabled 외부 서버를
+# 그 하네스의 MCP 설정 파일(.mcp.json / .cursor/mcp.json …)로 병합한다. 생성물은 모두 .gitignore.
+#
+# 시크릿 정책: 토큰/키 평문 금지. env 값은 반드시 ${ENV_VAR} 참조로만 둔다(값은 셸/.env 에서 주입).
+#   harness 가 ${VAR} 를 확장하지 않으면, 하네스를 띄우는 셸에 해당 변수를 export 해두면
+#   spawn 된 MCP 서버 프로세스가 환경을 상속한다.
+#
+# 아래 servers 는 예시 골격이다 — 실제 패키지명/인자는 각 MCP 서버 문서에 맞게 조정하라.
+servers:
+  jira:
+    command: npx
+    args: ["-y", "mcp-jira"]
+    env:
+      JIRA_URL: ${JIRA_URL}
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN}
+  figma:
+    command: npx
+    args: ["-y", "figma-developer-mcp", "--stdio"]
+    env:
+      FIGMA_API_KEY: ${FIGMA_API_KEY}
+  bitbucket:
+    command: npx
+    args: ["-y", "mcp-bitbucket"]
+    env:
+      BITBUCKET_USERNAME: ${BITBUCKET_USERNAME}
+      BITBUCKET_APP_PASSWORD: ${BITBUCKET_APP_PASSWORD}
+
+# 사용할 외부 MCP 만 켠다(비우면 substrate 만). 예: enabled: ["jira", "figma"]
+enabled: []

@@ -101,6 +101,24 @@ def _platform_body() -> str:
 ## 4. 검증 (커밋 전 필수)
 `python tools/validate_node.py <node>` 통과해야 한다(pre-commit 훅이 자동 실행, CI에서도 검사).
 직접 파일쓰기는 허용되나, 규칙 위반은 훅이 사후 거부한다.
+
+## 5. 운영 플레이북 (자연어 요청 → 플랫폼 명령)
+유저는 명령을 직접 치기보다 **너에게 자연어로 요청**한다. 아래 요청은 **반드시 이 플랫폼 명령/도구로
+수행**하라(임의 우회·수작업 금지). 어떤 하네스에서 돌든 동일하게 따른다. 모르면 `./harness -h`.
+
+| 유저가 이렇게 말하면 | 너는 이렇게 한다 |
+|---|---|
+| "<경로>의 프로젝트 붙여줘/추가해줘" | `./harness init <name> --link-type symlink --target <절대경로>` → `./harness bootstrap projects/<name>-node` |
+| "cursor/gemini/copilot 쓸게" | `./harness use <harness>` (진입규칙·스킬 로컬 생성) |
+| "bitbucket/jira/figma MCP 붙여줘" | `platform/mcp-servers.yaml` 의 `enabled` 에 해당 서버 추가(없으면 `servers:` 에 정의; **토큰은 `${{ENV_VAR}}` 참조만, 평문 금지**) → `./harness mcp <harness> --node <node>` → 유저에게 필요한 `${{ENV_VAR}}` export 안내 |
+| "이 데이터 넣어줘/인제스트" | 파일을 `projects/<node>-node/data/update/` 에 두고 `./harness ingest <node>` (원본→archives, 출처→info/index.yaml) |
+| "검색/찾아줘" (의미 검색) | MCP `search_info`/`search_all` 또는 `./harness search <node> "<질의>"` |
+| "테스트/검증 돌려줘" | `./harness verify <node>` (결과는 자동으로 ONBOARDING 에 반영) |
+| "플랫폼 업데이트 받아줘" | `./harness update` (git pull --ff-only + 의존성/훅/규칙 갱신) |
+| 위험행동(ssh/scp/push/deploy/삭제) | `platform/policies/approval-gates.md` 게이트 통과 + MCP `request_approval` (사람이 최종 승인) |
+
+> 원칙: **시크릿은 항상 이름(`${{ENV_VAR}}`)으로만**, 기판 변경은 **MCP 쓰기 게이트웨이 또는 정식 명령으로만**,
+> 경과·결정은 **worklog/ADR 에 기록**. 이렇게 해야 모든 에이전트가 일관 규칙으로 운영·관리된다.
 """
 
 

@@ -2,6 +2,16 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.21.0] - 2026-06-11
+### Added
+- **외부 MCP 레지스트리**(ADR 0014). `platform/mcp-servers.yaml`(옵트인) — Jira/Figma/Bitbucket 등을
+  `servers:`+`enabled:` 로 선언(시크릿은 `${ENV_VAR}` 참조만). `harness mcp <harness> [--node NAME]` 가
+  substrate 서버 + enabled 외부 서버를 하네스 MCP 설정(.mcp.json/.cursor/mcp.json)으로 병합(기존 보존,
+  평문 시크릿 거부). harnesses.yaml 에 `mcp_config` 경로 추가.
+- **운영 플레이북** — AGENTS.md §5: "자연어 요청 → 플랫폼 명령" 매핑표를 정본 진입규칙에 인코딩.
+  유저가 "bitbucket MCP 붙여줘"/"프로젝트 추가해줘" 라고 하면 모든 하네스의 에이전트가 동일 경로로
+  처리(임의 수작업 금지, 시크릿 이름참조, 기판변경은 게이트/훅).
+
 ## [0.20.0] - 2026-06-11
 ### Added
 - **작업 이력 자동 인계**(ADR 0013). 새 에이전트가 이전 작업(이슈·디버깅·결정·테스트)을 자동으로 이어본다.
