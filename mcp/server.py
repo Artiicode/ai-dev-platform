@@ -323,4 +323,18 @@ def request_approval(action: str, detail: str = "") -> dict:
 if __name__ == "__main__":
     # 트랜스포트: stdio(기본, CLI/MCP 클라이언트) | sse | streamable-http (향후 웹 GUI)
     transport = os.environ.get("HARNESS_MCP_TRANSPORT", "stdio")
+    # Self-heal: a clone may be missing entry-rule symlinks / git hooks (both gitignored).
+    # Regenerate them idempotently so any harness that spawns this server gets a consistent
+    # gateway. This runs inside the venv (deps already present) — it never builds the venv.
+    # stdout IS the stdio protocol channel, so route all bootstrap noise to stderr.
+    if os.environ.get("HARNESS_SKIP_READY") != "1":
+        try:
+            import contextlib
+            import gen_agent_rules
+            import install_hooks
+            with contextlib.redirect_stdout(sys.stderr):
+                gen_agent_rules.generate()
+                install_hooks.main()
+        except Exception as _e:  # never block serving on a self-heal hiccup
+            print("[mcp] self-heal skipped: %s" % _e, file=sys.stderr)
     mcp.run(transport=transport)

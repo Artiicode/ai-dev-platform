@@ -2,6 +2,9 @@
 # ai-autodev-harness CLI 런처. venv(.venv)가 있으면 자동 사용.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# One-time idempotent readiness (venv + deps + git hooks + entry-rule symlinks + vectors).
+# Instant no-op once prepared; set HARNESS_SKIP_READY=1 to bypass (CI/tests).
+bash "$HERE/scripts/ensure_ready.sh" || true
 PY="python3"
 [ -x "$HERE/.venv/bin/python" ] && PY="$HERE/.venv/bin/python"
 exec "$PY" "$HERE/tools/harness_cli.py" "$@"

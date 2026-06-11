@@ -2,6 +2,19 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.18.0] - 2026-06-11
+### Added
+- **진입점 무관 1회 자동 부트스트랩**(ADR 0012). 멱등 가드 `scripts/ensure_ready.sh` +
+  머신-로컬 스탬프 `.harness-ready`(미추적). 준비되면 즉시 no-op, 아니면 `post_clone.sh`에 위임.
+  - **`./harness` 런처**가 모든 명령 전에 호출 → 첫 실행 시 venv/훅/진입규칙/벡터 자동 준비.
+  - **MCP 서버 기동**(`mcp/server.py`)이 진입규칙 심링크·git 훅을 self-heal(가벼움; stdio 보호 위해
+    stdout→stderr, 실패해도 서버는 계속). venv 생성/모델 다운로드는 안 함.
+  - **git `post-merge` 훅**이 `git pull` 후 진입규칙·훅을 갱신.
+  - `HARNESS_SKIP_READY=1` 로 전 구간 우회(CI/테스트).
+- AGENTS.md §0에 부트스트랩 가드 지침(완전 신선한 clone을 셸 없이 claude/cursor로 바로 연 경우용).
+### Changed
+- `post_clone.sh`가 성공 시 `.harness-ready` 스탬프를 생성. `.gitignore`에 스탬프 추가.
+
 ## [0.17.2] - 2026-06-10
 ### Added
 - **`harness update`** — `git pull --ff-only` 후 의존성/훅/진입규칙을 갱신하는 소비자용 업데이트

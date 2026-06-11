@@ -35,6 +35,9 @@ GEMINI.md
 /projects/*
 !/projects/_template-node
 
+# 부트스트랩 스탬프(머신 로컬): clone 1회 준비 완료 표식. ensure_ready.sh 가 생성/확인.
+.harness-ready
+
 # 상태/락
 **/state/lock.json
 

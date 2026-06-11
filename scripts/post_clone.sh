@@ -40,5 +40,8 @@ for nd in projects/*-node; do
   fi
 done
 
+# Stamp readiness so ensure_ready.sh / launchers treat this clone as prepared (no-op next time).
+touch "$ROOT/.harness-ready"
+
 echo "==> 준비 완료.  source .venv/bin/activate  후  ./harness <명령> 사용."
 echo "    (오프라인/모델다운로드 회피:  HARNESS_EMBED_BACKEND=hash make ready)"

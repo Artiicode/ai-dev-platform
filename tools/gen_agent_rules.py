@@ -65,7 +65,11 @@ def _platform_body() -> str:
 
 ## 0. 이 프로젝트가 무엇인가
 - **템플릿 플랫폼**이다. 실제 프로젝트 노드는 들어있지 않고 `projects/_template-node/`(틀)만 있다.
-  → 새 노드는 `./harness init <name>` 으로 만든다(`docs/USAGE.md` 참고). clone 직후엔 `make ready`.
+  → 새 노드는 `./harness init <name>` 으로 만든다(`docs/USAGE.md` 참고).
+- **준비(부트스트랩):** clone 본은 venv/git훅/진입규칙 심링크/벡터가 비어 있어 1회 준비가 필요하다.
+  `./harness <명령>` 첫 실행(또는 MCP 서버 기동) 시 **자동으로 1회 수행**되며, 표식은 `.harness-ready`
+  파일이다(있으면 건너뜀). **이 파일이 없고 아직 준비가 안 된 상태라면, 작업을 시작하기 전에
+  `make ready`(또는 `bash scripts/ensure_ready.sh`)를 1회 실행하라.** (오프라인: `HARNESS_EMBED_BACKEND=hash make ready`)
 - `projects/<name>-node/repo/` = 실제 소프트웨어 코드(symlink/clone/submodule).
 - `projects/<name>-node/`(repo 제외) = 그 프로젝트의 **AI 운영 데이터**(context/scenario/history/info/code 규칙).
 - 플랫폼 루트 = 글로벌 AI 설정(`platform/`), 변환 도구(`tools/`), 기판 노출(`mcp/`), 어댑터(`adapters/`).
