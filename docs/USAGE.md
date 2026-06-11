@@ -69,7 +69,18 @@ cp -n .env.example .env        # 사용할 모델 키 채우기(models.yaml 참�
 
 ## 3. 새 프로젝트 시작
 
+> **제로베이스(맨바닥) 새 프로젝트:** `./harness init my_app` (기본 `--link-type path`) → 코드는
+> **`projects/my_app-node/repo/` 안에서만** 작성합니다. **플랫폼 루트나 현재 디렉토리에 코드를 만들지
+> 마세요.** 에이전트에게 "새 앱/소프트웨어 만들어줘"라고 하면, 진입규칙(AGENTS.md §5)에 따라 먼저
+> `harness init` 으로 노드를 만들고 그 `repo/` 안에서 작업합니다. 그 코드를 독립 git 으로 관리하려면
+> `projects/my_app-node/repo/` 안에서 `git init` 하세요(플랫폼 이력과 분리).
+
 ```bash
+# 제로베이스:
+./harness init my_app                # projects/my_app-node/ 생성, repo/ 는 빈 코드 디렉토리
+# (이후 코드는 projects/my_app-node/repo/ 안에 작성)
+
+# 기존 원격을 clone 해 시작:
 ./harness init my_proj --link-type git-clone --url git@github.com:org/my_proj.git --ref main
 ./harness bootstrap my_proj          # repo clone + setup 실행
 # 자료 투입(아무 포맷): pdf/docx/html/이미지/json/csv/md/txt

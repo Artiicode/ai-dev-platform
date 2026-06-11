@@ -82,6 +82,9 @@ def _platform_body() -> str:
 {rules}
 
 ## 2. 파일 배치 (강제)
+- **새 소프트웨어 코드는 반드시 해당 노드의 `projects/<name>-node/repo/` 안에서만 생성·수정한다.**
+  플랫폼 루트(여기)나 현재 작업 디렉토리에 프로젝트 코드를 만들지 **않는다**. 노드가 없으면 먼저
+  `./harness init <name>` 으로 만든 뒤 그 `repo/` 안에서 작업한다. (제로베이스 신규 프로젝트도 동일.)
 - `repo/` 안에는 AI 파일(프롬프트/컨텍스트/이력/info)을 **절대** 두지 않는다 — 전부 `-node/` 레벨에.
 - 데이터는 `data/update/`에 투입 → `harness ingest <node>`로 `info/`(md/SQL/vector)로 변환.
   원본은 `archives/`, 출처·해시는 `info/index.yaml`.
@@ -108,7 +111,8 @@ def _platform_body() -> str:
 
 | 유저가 이렇게 말하면 | 너는 이렇게 한다 |
 |---|---|
-| "<경로>의 프로젝트 붙여줘/추가해줘" | `./harness init <name> --link-type symlink --target <절대경로>` → `./harness bootstrap projects/<name>-node` |
+| "(제로베이스) 새 소프트웨어/앱/프로젝트 만들어줘" | `./harness init <name>` (기본 link-type path) → **코드는 `projects/<name>-node/repo/` 안에서만 작성**. 루트/현재 디렉토리에 만들지 말 것 |
+| "<경로>의 기존 프로젝트 붙여줘/추가해줘" | `./harness init <name> --link-type symlink --target <절대경로>` → `./harness bootstrap projects/<name>-node` |
 | "cursor/gemini/copilot 쓸게" | `./harness use <harness>` (진입규칙·스킬 로컬 생성) |
 | "bitbucket/jira/figma MCP 붙여줘" | `platform/mcp-servers.yaml` 의 `enabled` 에 해당 서버 추가(없으면 `servers:` 에 정의; **레지스트리엔 `${{ENV_VAR}}` 참조만**) → `./harness mcp <harness> --node <node>` → **자격증명은 `.env`(gitignored)에 넣게 안내**(자동 주입, export 아님) |
 | "이 데이터 넣어줘/인제스트" | 파일을 `projects/<node>-node/data/update/` 에 두고 `./harness ingest <node>` (원본→archives, 출처→info/index.yaml) |
@@ -125,7 +129,9 @@ def _platform_body() -> str:
 def _node_body(node_name: str) -> str:
     return f"""# {node_name} — 노드 작업 규칙 (강제)
 
-이 디렉토리는 `{node_name}` 프로젝트의 **AI 운영 노드**다. `repo/`(실제 코드)에는 AI 파일을 두지 않는다.
+이 디렉토리는 `{node_name}` 프로젝트의 **AI 운영 노드**다. **이 프로젝트의 소프트웨어 코드는 이 노드의
+`repo/` 안에서만 작성·수정한다**(플랫폼 루트/현재 디렉토리에 만들지 말 것). 반대로 `repo/`(실제 코드)에는
+AI 파일(프롬프트/컨텍스트/이력/info)을 두지 않는다.
 
 ## 진입 순서 (반드시)
 1. `history/ONBOARDING.md` — 현재 상태/활성 티켓/최근 결정/알려진 이슈.

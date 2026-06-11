@@ -61,11 +61,18 @@ def init(name, link_type, url, ref, force, target=None, private=False):
     if private:
         open(os.path.join(dest, ".gitignore"), "w", encoding="utf-8").write(_PRIVATE_GITIGNORE)
     _sub_in_file(os.path.join(dest, "history", "ONBOARDING.md"), repl)
+    # Always ensure repo/ exists — it is where THIS project's code lives (zero-base or linked).
+    # (Empty dirs aren't carried by git, so a clone's template may lack it.)
+    os.makedirs(os.path.join(dest, "repo"), exist_ok=True)
 
     rel = os.path.relpath(dest, ROOT)
     print("[init] 생성 완료: %s" % rel)
+    print("     코드는 %s/repo/ 안에서만 작성한다(플랫폼 루트/현재 디렉토리 금지)." % rel)
     print("\n다음 단계:")
-    print("  1) repo 링크/의존성:  python tools/bootstrap/install.py --node %s" % rel)
+    if link_type == "path":
+        print("  1) (제로베이스) 코드를 %s/repo/ 에 바로 작성 — 새 git 으로 관리하려면 그 안에서 git init" % rel)
+    else:
+        print("  1) repo 링크/의존성:  python tools/bootstrap/install.py --node %s" % rel)
     print("  2) 데이터 인제스트:    %s/data/update/ 에 파일 투입 후" % rel)
     print("                         python tools/data-to-info/router.py --node %s" % rel)
     print("  3) (선택) 하네스 활성화: platform/harnesses.yaml + harness gen-rules / sync-skills")
