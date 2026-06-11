@@ -12,19 +12,19 @@ bash scripts/setup.sh
 PY=.venv/bin/python
 echo "==> [2/4] git pre-commit 훅 설치"
 if [ -d .git ]; then
-  "$PY" tools/install_hooks.py || true
+  "$PY" tools/harness/install_hooks.py || true
 else
   echo "    (git 저장소 아님 — 'git init' 후 다시 실행하면 훅 설치)"
 fi
 
 shopt -s nullglob
 echo "==> [3/4] 진입 규칙 심링크 생성 (정본 AGENTS.md → CLAUDE/GEMINI/.cursorrules/Copilot)"
-"$PY" tools/gen_agent_rules.py >/dev/null || true
+"$PY" tools/harness/gen_agent_rules.py >/dev/null || true
 for nd in projects/*-node; do
   base="$(basename "$nd")"
   [ "$base" = "_template-node" ] && continue
   [ -f "$nd/manifest.yaml" ] || continue
-  "$PY" tools/gen_agent_rules.py --node "${base%-node}" >/dev/null || true
+  "$PY" tools/harness/gen_agent_rules.py --node "${base%-node}" >/dev/null || true
 done
 
 echo "==> [4/4] 노드 벡터 스토어 재생성 (없을 때만; backend=${HARNESS_EMBED_BACKEND:-local})"

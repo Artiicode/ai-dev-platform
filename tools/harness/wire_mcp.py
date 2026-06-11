@@ -11,7 +11,7 @@ import os
 import re
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(ROOT, "tools", "lib"))
 import registry  # platform/harnesses.yaml loader
 
@@ -43,7 +43,7 @@ def _wrap_external(cfg):
     """Run an external server through mcp_launch.py so it inherits credentials from .env.
     No env block is written to the config — secrets stay only in .env (gitignored)."""
     cmd = [cfg.get("command", "")] + [str(x) for x in (cfg.get("args") or [])]
-    return {"command": ".venv/bin/python", "args": ["tools/mcp_launch.py", "--"] + cmd}
+    return {"command": ".venv/bin/python", "args": ["tools/harness/mcp_launch.py", "--"] + cmd}
 
 
 def _substrate_entry(node):

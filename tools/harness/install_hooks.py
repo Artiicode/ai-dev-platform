@@ -6,7 +6,7 @@ git 저장소가 아니면 안내만 한다(CI 검증은 .github/workflows/valid
 from __future__ import annotations
 import os, shutil, sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def main():

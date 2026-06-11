@@ -41,7 +41,8 @@ NODE_DIR = os.environ.get("NODE_DIR", os.getcwd())
 INFO = os.path.join(NODE_DIR, "info")
 _LIB = os.path.join(os.path.dirname(__file__), "..", "tools", "lib")
 _TOOLS = os.path.join(os.path.dirname(__file__), "..", "tools")
-for _p in (_LIB, _TOOLS, os.path.join(_TOOLS, "data-to-info")):
+for _p in (_LIB, _TOOLS, os.path.join(_TOOLS, "data-to-info"),
+           os.path.join(_TOOLS, "node"), os.path.join(_TOOLS, "harness")):
     sys.path.insert(0, _p)
 
 mcp = FastMCP("ai-autodev-harness")
@@ -59,7 +60,7 @@ def _rules_text():
                  os.path.join(NODE_DIR, "..", "..", "platform", "prompts", "global-system.md")):
         if os.path.exists(cand):
             return open(cand, encoding="utf-8").read()
-    return "(규칙 파일 없음 — `python tools/gen_agent_rules.py` 실행 필요)"
+    return "(규칙 파일 없음 — `python tools/harness/gen_agent_rules.py` 실행 필요)"
 
 
 def _secret_in(text):

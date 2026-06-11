@@ -144,7 +144,7 @@ Windows의 Claude Desktop MCP 설정에서 `wsl.exe`로 진입해 실행합니�
 # 3) 병합: substrate(노드) + enabled 외부 서버 → 하네스 MCP 설정(.mcp.json / .cursor/mcp.json)
 ./harness mcp claude-code --node my_proj
 ```
-- 외부 서버는 `tools/mcp_launch.py`(env 주입 셈)로 감싸 기동되어 **`.env` 를 자동 주입**받습니다 →
+- 외부 서버는 `tools/harness/mcp_launch.py`(env 주입 셈)로 감싸 기동되어 **`.env` 를 자동 주입**받습니다 →
   셸 `export` 불필요, 평문 토큰이 `.mcp.json` 에 기록되지 않음.
 - 새 외부 MCP 지원 = 코드 수정 없이 `platform/mcp-servers.yaml` 에 블록 한 개 추가.
 - 값에 `#`·공백이 있으면 `.env` 에서 따옴표로 감싸세요. 이미 export 된 변수는 `.env` 가 덮어쓰지 않습니다.

@@ -5,6 +5,6 @@
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 [ "${HARNESS_SKIP_READY:-}" = "1" ] && exit 0
 PY="$ROOT/.venv/bin/python"; [ -x "$PY" ] || PY="python3"
-"$PY" "$ROOT/tools/gen_agent_rules.py" >/dev/null 2>&1 || true
-"$PY" "$ROOT/tools/install_hooks.py" >/dev/null 2>&1 || true
+"$PY" "$ROOT/tools/harness/gen_agent_rules.py" >/dev/null 2>&1 || true
+"$PY" "$ROOT/tools/harness/install_hooks.py" >/dev/null 2>&1 || true
 exit 0

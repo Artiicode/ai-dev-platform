@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LOCAL = os.path.join(ROOT, ".harness-local.json")
 HARNESS_CLI = os.path.join(ROOT, "tools", "harness_cli.py")
 

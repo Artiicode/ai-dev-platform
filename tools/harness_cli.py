@@ -29,7 +29,8 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-for p in ("tools", "tools/lib", "tools/data-to-info", "tools/bootstrap", "mcp"):
+for p in ("tools", "tools/node", "tools/harness", "tools/lib", "tools/data-to-info",
+          "tools/bootstrap", "mcp"):
     sys.path.insert(0, os.path.join(ROOT, p))
 
 

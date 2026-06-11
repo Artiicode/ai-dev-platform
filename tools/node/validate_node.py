@@ -20,7 +20,7 @@ pre-commit / CI 훅이 호출하며, 규칙 위반 산출물을 거부한다. �
 from __future__ import annotations
 import glob, os, re, sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SCHEMA_DIR = os.path.join(ROOT, "docs", "schemas")
 
 REQUIRED_DIRS = ["data/update", "info", "archives", "code", "scenario", "history", "hw"]

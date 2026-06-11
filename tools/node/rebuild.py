@@ -12,9 +12,9 @@ import os
 import shutil
 import sys
 
-_LIB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib")
-sys.path.insert(0, _LIB)
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "data-to-info"))
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/node/ → 루트
+sys.path.insert(0, os.path.join(_ROOT, "tools", "lib"))
+sys.path.insert(0, os.path.join(_ROOT, "tools", "data-to-info"))
 import router  # noqa
 
 

@@ -2,6 +2,15 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.26.0] - 2026-06-11
+### Changed
+- **`tools/` 의미별 재정리(이력 보존 `git mv`).** 루트엔 진입점 `harness_cli.py` 만 남기고:
+  - `tools/node/` — 노드 작업(`init_project`·`validate_node`·`gen_onboarding`·`rebuild`·`verify`·`debug_runner`)
+  - `tools/harness/` — 플랫폼·하네스 와이어링(`gen_agent_rules`·`sync_skills`·`install_hooks`·`wire_mcp`·`mcp_launch`·`session`)
+  - 모듈은 `ROOT` 기준 경로(위치 독립). `harness_cli`·`mcp/server` 가 `tools/node`·`tools/harness` 를
+    sys.path 에 추가. 훅(`pre-commit`/`post-merge`)·`post_clone.sh`·생성 본문(AGENTS.md)·명령/스킬 문서의
+    경로 참조 일괄 갱신. 전체 회귀 테스트(컴파일·standalone·CLI·MCP self-heal·ingest·훅 문법) 통과.
+
 ## [0.25.0] - 2026-06-11
 ### Added
 - **`harness start [세션이름]`** — 작업 세션 런처. 기본 하네스(claude-code/cursor)·claude 실행 플래그

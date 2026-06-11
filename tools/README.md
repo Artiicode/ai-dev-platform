@@ -18,11 +18,20 @@ status: living
 7. **의존성 최소.** 무거운 라이브러리는 선택적 import + 친절한 안내.
 8. **버전 헤더.** 각 툴 상단에 `__tool_version__`.
 
-## 디렉토리
+## 디렉토리 (의미별)
+- `harness_cli.py` — 통합 CLI 진입점(루트 `./harness` 가 호출).
+- `node/` — 노드 단위 작업: 생성/검증/온보딩/재빌드/검증루프/디버그
+  (`init_project`·`validate_node`·`gen_onboarding`·`rebuild`·`verify`·`debug_runner`).
+- `harness/` — 플랫폼·하네스 와이어링: 진입규칙/스킬 생성, 훅 설치, MCP 와이어링/런처, 세션
+  (`gen_agent_rules`·`sync_skills`·`install_hooks`·`wire_mcp`·`mcp_launch`·`session`).
 - `data-to-info/` 라우터 + 타입별 변환기(docs/db/code).
 - `bootstrap/` 의존성·repo 링크 자동 셋업.
-- `lib/` 공용(provenance 등).
+- `lib/` 공용(provenance·embedder·locks·registry 등).
+- `hooks/` git 훅(pre-commit·commit-msg·post-merge).
 - `tests/` 툴 자체 테스트.
+
+> 모듈은 `ROOT` 기준 경로로 `tools/lib` 등을 찾으므로 위치 독립적이다. `harness_cli.py`/`mcp/server.py`
+> 는 `tools/node`·`tools/harness` 를 sys.path 에 추가해 bare import 를 해석한다.
 
 ## 새 변환기 추가 (예: json-to-info)
 `data-to-info/db/json-to-info/`에 변환기 + `README.md`(입력 스키마, 출력 store, 규칙) 작성하고

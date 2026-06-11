@@ -10,7 +10,7 @@ import os
 import shutil
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # tools/ 의 부모 = 플랫폼 루트
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/ 의 부모 = 플랫폼 루트
 TEMPLATE = os.path.join(ROOT, "projects", "_template-node")
 
 

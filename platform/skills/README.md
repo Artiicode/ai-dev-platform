@@ -1,6 +1,6 @@
 # platform/skills — 정본 스킬 레지스트리 (하네스 중립)
 
-재사용 스킬을 **하네스 중립 마크다운 1벌**로 여기 정의한다. `tools/sync_skills.py`
+재사용 스킬을 **하네스 중립 마크다운 1벌**로 여기 정의한다. `tools/harness/sync_skills.py`
 (`harness sync-skills`)가 `platform/harnesses.yaml`의 **활성 하네스**의 `skills_dir`로 배포한다
 (예: `.claude/skills/<slug>/SKILL.md`). 켠 하네스가 없으면 배포하지 않는다(순수 중립).
 
