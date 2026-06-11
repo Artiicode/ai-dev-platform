@@ -6,6 +6,7 @@
   bootstrap  manifest 기반 repo 링크 + 의존성 설치
   ingest     data/update/* -> info/ (md/sql/vector) 적재
   update     플랫폼 업데이트 받기 (git pull --ff-only + 의존성/훅/진입규칙 갱신)
+  use        하네스 동적 주입 (enabled 추가 + 진입규칙/스킬 생성): harness use cursor
   serve      해당 노드의 MCP 서버 실행 (stdio 기본, sse 가능)
   info       노드의 정보 자산 요약 (md/sql/vector)
   search     벡터 RAG 시맨틱 검색
@@ -94,6 +95,48 @@ def cmd_models(a):
 def cmd_syncskills(a):
     import sync_skills
     return sync_skills.sync(getattr(a, "node", None), a.link)
+
+
+def _write_enabled(names):
+    """Rewrite only the top-level `enabled:` line in harnesses.yaml, preserving comments."""
+    import registry
+    lines = open(registry.PATH, encoding="utf-8").read().splitlines()
+    rendered = "enabled: [%s]" % ", ".join('"%s"' % n for n in names)
+    for i, ln in enumerate(lines):
+        s = ln.lstrip()
+        if s.startswith("enabled:") and not s.startswith("#"):
+            lines[i] = rendered
+            break
+    else:
+        lines.append(rendered)
+    open(registry.PATH, "w", encoding="utf-8").write("\n".join(lines) + "\n")
+
+
+def cmd_use(a):
+    """Dynamically wire the platform to a harness: enable it in the registry, then
+    (re)generate its entry-rule symlink and project skills/commands. Idempotent."""
+    import registry, gen_agent_rules, sync_skills
+    reg = registry.load()
+    known = reg.get("harnesses") or {}
+    if a.harness not in known:
+        sys.stderr.write("[use] unknown harness '%s'. known: %s\n"
+                         % (a.harness, ", ".join(sorted(known)) or "(none)"))
+        return 2
+    cur = list(reg.get("enabled") or [])
+    if a.harness in cur:
+        print("[use] '%s' already enabled" % a.harness)
+    else:
+        cur.append(a.harness)
+        _write_enabled(cur)
+        print("[use] enabled '%s' in platform/harnesses.yaml" % a.harness)
+    gen_agent_rules.generate()
+    sync_skills.sync()
+    cfg = known[a.harness] or {}
+    print("[use] '%s' wired — entry rules (%s) + skills projected."
+          % (a.harness, cfg.get("rules_file", "?")))
+    print("[use] MCP gateway (optional, harness-specific): copy adapters/mcp.example.json "
+          "into this harness's MCP config and set NODE_DIR — see docs/USAGE.md.")
+    return 0
 
 
 def cmd_wikicompile(a):
@@ -242,7 +285,7 @@ def cmd_webgui(a):
 
 def build_parser():
     ap = argparse.ArgumentParser(prog="harness", description="ai-autodev-harness CLI")
-    sub = ap.add_subparsers(dest="cmd", required=True)
+    sub = ap.add_subparsers(dest="cmd", required=False)
 
     p = sub.add_parser("init"); p.add_argument("name")
     p.add_argument("--link-type", default="path", choices=["path", "git-submodule", "git-clone", "symlink"])
@@ -268,6 +311,10 @@ def build_parser():
     p = sub.add_parser("sync-skills"); p.add_argument("--node", default=None)
     p.add_argument("--link", action="store_true", help="복제 대신 심볼릭 링크(POSIX 전용)")
     p.set_defaults(fn=cmd_syncskills)
+
+    p = sub.add_parser("use", help="하네스 동적 주입: enabled 추가 + 진입규칙/스킬 생성")
+    p.add_argument("harness", help="claude-code | cursor | gemini | copilot")
+    p.set_defaults(fn=cmd_use)
 
     p = sub.add_parser("wiki"); p.add_argument("node")
     p.add_argument("--reindex", action="store_true"); p.add_argument("--embed", action="store_true")
@@ -329,7 +376,11 @@ def build_parser():
 
 
 def main():
-    a = build_parser().parse_args()
+    ap = build_parser()
+    a = ap.parse_args()
+    if not getattr(a, "fn", None):   # bare `harness` (no subcommand) → friendly help, not error
+        ap.print_help()
+        sys.exit(0)
     sys.exit(a.fn(a))
 
 

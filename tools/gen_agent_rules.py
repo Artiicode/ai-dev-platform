@@ -70,6 +70,9 @@ def _platform_body() -> str:
   `./harness <명령>` 첫 실행(또는 MCP 서버 기동) 시 **자동으로 1회 수행**되며, 표식은 `.harness-ready`
   파일이다(있으면 건너뜀). **이 파일이 없고 아직 준비가 안 된 상태라면, 작업을 시작하기 전에
   `make ready`(또는 `bash scripts/ensure_ready.sh`)를 1회 실행하라.** (오프라인: `HARNESS_EMBED_BACKEND=hash make ready`)
+- **하네스 주입(동적):** 사용할 AI CLI/IDE에 맞게 `./harness use <claude-code|cursor|gemini|copilot>` 를
+  실행하면 그 하네스의 진입규칙 파일(예: `.cursorrules`)·스킬이 로컬 생성된다.
+  **유저가 "cursor(혹은 다른 하네스) 쓸게"라고 하면 이 명령을 실행하라.**
 - `projects/<name>-node/repo/` = 실제 소프트웨어 코드(symlink/clone/submodule).
 - `projects/<name>-node/`(repo 제외) = 그 프로젝트의 **AI 운영 데이터**(context/scenario/history/info/code 규칙).
 - 플랫폼 루트 = 글로벌 AI 설정(`platform/`), 변환 도구(`tools/`), 기판 노출(`mcp/`), 어댑터(`adapters/`).

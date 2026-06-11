@@ -2,6 +2,15 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.19.0] - 2026-06-11
+### Added
+- **`harness use <harness>`** — 하네스 동적 주입. 이름(claude-code|cursor|gemini|copilot)만 받아
+  레지스트리 `enabled`에 추가 + 진입규칙 심링크(예: `.cursorrules`) 생성 + 스킬/커맨드 투영을
+  멱등 수행. 유저가 "cursor 쓸게" 하면 AI가 이 한 줄로 셋업. AGENTS.md §0에 사용 지침 추가.
+### Fixed
+- 서브커맨드 없이 `./harness` 만 실행하면 argparse 에러(exit 2) 대신 **도움말 출력 후 정상 종료**.
+  (clone 후 첫 `./harness` 가 부트스트랩만 하고 깔끔히 끝나도록.)
+
 ## [0.18.0] - 2026-06-11
 ### Added
 - **진입점 무관 1회 자동 부트스트랩**(ADR 0012). 멱등 가드 `scripts/ensure_ready.sh` +
