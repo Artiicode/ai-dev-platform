@@ -280,6 +280,31 @@ def record_decision(title: str, body: str, session_token: str) -> dict:
 
 
 @mcp.tool()
+def standup_add(item: str, session_token: str) -> dict:
+    """오늘 스탠드업 [진행사항] 에 항목 추가(history/standup/<오늘>.md). 작업하며 수시로 호출."""
+    if not _need_token(session_token):
+        return {"error": "유효한 session_token 필요 — 먼저 begin_session() 호출."}
+    sec = _secret_in(item)
+    if sec:
+        return {"error": "평문 시크릿 의심(%s)." % sec}
+    import standup
+    p = standup.add(NODE_DIR, item)
+    _refresh_onboarding()
+    return {"ok": True, "path": os.path.relpath(p, NODE_DIR)}
+
+
+@mcp.tool()
+def standup_summary(today: str = "", tomorrow: str = "", session_token: str = "") -> dict:
+    """오늘 스탠드업 [요약]의 '오늘'/'내일' 갱신(스크럼 요약용)."""
+    if not _need_token(session_token):
+        return {"error": "유효한 session_token 필요 — 먼저 begin_session() 호출."}
+    import standup
+    p = standup.set_summary(NODE_DIR, today or None, tomorrow or None)
+    _refresh_onboarding()
+    return {"ok": True, "path": os.path.relpath(p, NODE_DIR)}
+
+
+@mcp.tool()
 def ingest_data(session_token: str, dry_run: bool = False) -> dict:
     """data/update/* → info/ (md/sql/vector) 정식 변환 경로. provenance/archives 자동 처리.
     info/ 에 직접 쓰지 말고 이 도구(또는 `harness ingest`)를 사용한다."""

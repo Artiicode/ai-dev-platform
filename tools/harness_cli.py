@@ -9,7 +9,8 @@
   use        하네스 동적 주입 (enabled 추가 + 진입규칙/스킬 생성): harness use cursor
   mcp        MCP 와이어링 (substrate + 외부 MCP jira/figma 등 → 하네스 설정 병합)
   tool       toolkit 번들 도구 실행 (harness tool <name> -- <args>)
-  start      작업 세션 시작 (하네스 선택/기본값 + tmux: 좌 claude/우상 git watch/우하 usage)
+  start      작업 세션 시작 (하네스 선택/기본값 + tmux: 좌 claude/우상 치트시트+셸/우하 usage)
+  standup    일 단위 스탠드업 로그 (진행사항/요약) 관리
   serve      해당 노드의 MCP 서버 실행 (stdio 기본, sse 가능)
   info       노드의 정보 자산 요약 (md/sql/vector)
   search     벡터 RAG 시맨틱 검색
@@ -65,21 +66,9 @@ def cmd_installhooks(a):
     return install_hooks.main()
 
 
-def cmd_update(a):
-    """Pull platform updates (fast-forward only) and refresh deps/hooks/entry-rules.
-
-    User nodes/data are gitignored, so a clone stays identical to upstream and the
-    pull is a clean fast-forward. Vectors are derived; rerun `make ready` to rebuild.
-    """
+def _update_refresh():
+    """Refresh derived bits after a successful update: deps + git hooks + entry rules."""
     import subprocess
-    print("[update] git pull --ff-only")
-    if subprocess.call(["git", "-C", ROOT, "pull", "--ff-only"]) != 0:
-        sys.stderr.write(
-            "[update] fast-forward failed — local history diverged from upstream.\n"
-            "         Your nodes/data should be untracked (see .gitignore). Run\n"
-            "         'git -C %s status' and move any platform edits onto a branch,\n"
-            "         then retry. We do NOT auto-merge to avoid clobbering local work.\n" % ROOT)
-        return 1
     req = os.path.join(ROOT, "requirements.txt")
     pip = os.path.join(ROOT, ".venv", "bin", "pip")
     if os.path.exists(pip) and os.path.exists(req):
@@ -88,7 +77,60 @@ def cmd_update(a):
     install_hooks.main()
     gen_agent_rules.generate()
     print("[update] deps/hooks/entry-rules refreshed. Run 'make ready' to rebuild vectors if data changed.")
-    return 0
+
+
+def cmd_update(a):
+    """Apply platform updates. Fast-forward when possible; otherwise merge and, on conflict,
+    surface the exact conflicted files so the agent can resolve them (see AGENTS.md §5).
+
+    The upstream patch MUST land: a clean tree is merged with upstream; only genuinely
+    conflicting hunks are left with markers for resolution — never silently dropped.
+    """
+    import subprocess
+
+    def git(*args, **kw):
+        return subprocess.run(["git", "-C", ROOT, *args], **kw)
+
+    print("[update] git fetch")
+    if git("fetch", "--all", "--prune").returncode != 0:
+        sys.stderr.write("[update] fetch 실패 — 네트워크/원격(origin) 확인.\n")
+        return 1
+    up = (git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}",
+              capture_output=True, text=True).stdout.strip() or "origin/master")
+
+    # 1) Fast-forward if we haven't diverged — the common, clean case.
+    if git("merge", "--ff-only", up).returncode == 0:
+        print("[update] fast-forward 완료 (%s)." % up)
+        _update_refresh()
+        return 0
+
+    # 2) Diverged. Refuse to merge over a dirty tree (would risk local work).
+    dirty = git("status", "--porcelain", capture_output=True, text=True).stdout.strip()
+    if dirty:
+        sys.stderr.write("[update] 로컬에 커밋 안 된 변경이 있어 머지할 수 없습니다. 먼저 커밋/스태시:\n")
+        sys.stderr.write(dirty + "\n")
+        return 1
+
+    # 3) Merge upstream (applies the patch); conflicting hunks get markers, not dropped.
+    print("[update] fast-forward 불가(이력 분기) → 머지: %s" % up)
+    git("merge", "--no-edit", up)
+    conflicts = git("diff", "--name-only", "--diff-filter=U",
+                    capture_output=True, text=True).stdout.split()
+    if not conflicts:
+        print("[update] 머지 완료(충돌 없음).")
+        _update_refresh()
+        return 0
+
+    # 4) Conflicts remain — report precisely. The agent (AGENTS.md §5) resolves markers,
+    #    validates, commits the merge, and tells the user what auto-resolved vs. needs review.
+    sys.stderr.write("[update] ⚠️ 충돌 — 아래 파일에 충돌 마커가 있습니다(에이전트가 해결):\n")
+    for f in conflicts:
+        sys.stderr.write("   CONFLICT: %s\n" % f)
+    sys.stderr.write(
+        "[update] 해결: 각 파일의 <<<<<<< ======= >>>>>>> 정리 → `git -C %s add <file>` →\n"
+        "         `git -C %s commit --no-edit` → `make ready`.  되돌리기: `git -C %s merge --abort`.\n"
+        % (ROOT, ROOT, ROOT))
+    return 3   # distinct code: conflicts to resolve
 
 
 def cmd_mcp(a):
@@ -133,7 +175,23 @@ def cmd_start(a):
     import session
     skip = True if a.skip_perms else (False if a.no_skip_perms else None)
     return session.start(session=a.session, harness=a.harness, skip_perms=skip,
-                         repo=a.repo, use_tmux=not a.no_tmux, attach=not a.no_attach)
+                         cwd=a.cwd, use_tmux=not a.no_tmux, attach=not a.no_attach)
+
+
+def cmd_standup(a):
+    import standup
+    nd = resolve_node(a.node)
+    if a.list:
+        print("\n".join(standup.list_days(nd)) or "(없음)")
+        return 0
+    did = False
+    if a.add:
+        print("[standup] + %s" % standup.add(nd, a.add, a.date)); did = True
+    if a.today is not None or a.tomorrow is not None:
+        print("[standup] 요약 %s" % standup.set_summary(nd, a.today, a.tomorrow, a.date)); did = True
+    if a.show or not did:
+        sys.stdout.write(standup.show(nd, a.date) or "(스탠드업 없음 — --add 로 시작)\n")
+    return 0
 
 
 def cmd_models(a):
@@ -380,10 +438,20 @@ def build_parser():
     p.add_argument("--harness", choices=["claude-code", "cursor"], default=None, help="기본값 무시하고 지정")
     p.add_argument("--skip-perms", action="store_true", help="claude --dangerously-skip-permissions 로 실행")
     p.add_argument("--no-skip-perms", action="store_true", help="claude 를 기본 권한으로 실행")
-    p.add_argument("--repo", default=None, help="우상단 git watch 대상(기본 플랫폼 루트)")
+    p.add_argument("--cwd", default=None, help="claude 를 실행할 디렉토리(미지정 시 선택/기본값)")
     p.add_argument("--no-tmux", action="store_true", help="tmux 없이 claude 만 실행")
     p.add_argument("--no-attach", action="store_true", help="세션만 구성하고 attach 안 함(테스트/원격)")
     p.set_defaults(fn=cmd_start)
+
+    p = sub.add_parser("standup", help="일 단위 스탠드업 로그(진행사항/요약): history/standup/<날짜>.md")
+    p.add_argument("node")
+    p.add_argument("--add", default=None, help="[진행사항] 에 항목 추가")
+    p.add_argument("--today", default=None, help="[요약] 오늘 진행 중")
+    p.add_argument("--tomorrow", default=None, help="[요약] 내일 예정")
+    p.add_argument("--date", default=None, help="대상 날짜(기본 오늘)")
+    p.add_argument("--show", action="store_true", help="해당 날짜 출력")
+    p.add_argument("--list", action="store_true", help="기록된 날짜 목록")
+    p.set_defaults(fn=cmd_standup)
 
     p = sub.add_parser("wiki"); p.add_argument("node")
     p.add_argument("--reindex", action="store_true"); p.add_argument("--embed", action="store_true")

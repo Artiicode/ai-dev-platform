@@ -201,8 +201,13 @@ git clone <remote> ai-dev-platform && cd ai-dev-platform
 make ready                  # 1회 준비 (또는 ./harness 첫 실행 시 자동) — venv/훅/진입규칙/벡터
 source .venv/bin/activate
 # … 노드 생성·작업 …
-./harness update            # 플랫폼 업데이트: git pull --ff-only + 의존성/훅/진입규칙 갱신
+./harness update            # 플랫폼 업데이트: ff 가능하면 fast-forward, 분기 시 머지 + 의존성/훅/규칙 갱신
 ```
+- **업데이트 충돌:** 로컬 이력이 분기됐고 머지 중 충돌이 나면, `update` 가 멈추지 않고 **충돌 파일을
+  정확히 출력(`CONFLICT: <file>`, rc=3)** 합니다. 상류 패치는 머지로 반영되며, 충돌 hunk 만 마커가 남습니다.
+  AI 에이전트는 진입규칙(§5)에 따라 마커를 직접 해결 → `git add`/`commit` → `verify` 후 **무엇이 자동
+  해결됐고 무엇이 사람 확인 필요한지 보고**합니다. 되돌리려면 `git merge --abort`. (커밋 안 된 로컬 변경이
+  있으면 머지 전에 거부하니 먼저 커밋/스태시하세요.)
 - **자동 1회 준비:** clone 본은 venv/git훅/진입규칙 심링크/벡터가 비어 있습니다. `./harness <명령>` 첫
   실행 시 `scripts/ensure_ready.sh` 가 자동으로 1회 준비하고 `.harness-ready`(머신-로컬 표식)를 남깁니다
   (있으면 건너뜀). MCP 서버 기동·`git pull`(post-merge 훅) 시에도 진입규칙·훅을 self-heal 합니다.
@@ -215,21 +220,23 @@ source .venv/bin/activate
 - **번들 도구(toolkit):** 버전관리되는 플랫폼 도구는 `toolkit/<tool>-node/` 에 둡니다(유저 프로젝트 노드와
   달리 추적됨, 하드 복사). 실행: `./harness tool <name> -- <args>`.
   예: `./harness tool ai-usage-monitor -- --watch 5` (Cursor/Claude Code 사용량·비용 대시보드).
-- **작업 세션:** `./harness start [세션이름]` — 처음엔 기본 하네스(claude-code/cursor)와 claude 실행
-  플래그(`--dangerously-skip-permissions` 여부)를 물어 `.harness-local.json`(머신-로컬, 미추적)에 저장하고,
-  선택한 하네스의 진입규칙을 주입(`harness use`)한 뒤 **tmux 세션**을 띄웁니다:
+- **작업 세션:** `./harness start [세션이름]` — 처음엔 **화살표 메뉴(↑/↓·숫자·Enter)**로 ① 기본
+  하네스(claude-code/cursor), ② claude 실행 방식(`--dangerously-skip-permissions` 여부), ③ claude 실행
+  디렉토리를 고르고 `.harness-local.json`(머신-로컬, 미추적)에 기본값 저장합니다. 선택한 하네스의
+  진입규칙을 주입(`harness use`)한 뒤 **tmux 세션**을 띄웁니다:
   ```
   ┌─────────────┬──────────────────────┐
-  │             │ 우상: git status watch │   (에이전트가 만드는 파일변경 실시간)
+  │             │ 우상: tmux 치트시트 +  │   (1회 출력 후 자유 셸 — 명령 입력 가능)
   │  좌: claude  ├──────────────────────┤
-  │             │ 우하: usage --watch    │   (ai-usage-monitor)
+  │   (선택 dir) │ 우하: usage --watch    │   (ai-usage-monitor)
   └─────────────┴──────────────────────┘
   ```
-  옵션: `--harness`, `--skip-perms`/`--no-skip-perms`, `--repo <git watch 대상>`, `--no-tmux`, `--no-attach`.
-  예: `./harness start els2.0 --skip-perms --repo projects/els2.0-node/repo`.
-  > tmux 필요(`sudo apt-get install tmux`). 이미 tmux 안이면 새 세션 attach가 중첩될 수 있으니 평범한
-  > 터미널에서 실행 권장. (참고: "에이전트 작업 화면을 별도 pane에 실시간 미러"는 claude/cursor가 지원하지
-  > 않아 불가 — 우상단은 그 근사치인 git 변경 감시입니다.)
+  옵션: `--harness`, `--skip-perms`/`--no-skip-perms`, `--cwd <claude 실행 디렉토리>`, `--no-tmux`, `--no-attach`.
+  예: `./harness start els2.0 --skip-perms --cwd projects/els2.0-node/repo`.
+  > tmux 필요(`sudo apt-get install tmux`). 이미 tmux 안이면 중첩될 수 있으니 평범한 터미널에서 실행 권장.
+- **일 단위 스탠드업:** `./harness standup <node>` — 스크럼용 일일 로그(`history/standup/<날짜>.md`).
+  추가 `--add "<진행항목>"`, 요약 `--today "..." --tomorrow "..."`, 보기 `--show [--date ...]`, 목록 `--list`.
+  에이전트가 작업하며 수시로 갱신(MCP `standup_add`/`standup_summary`)하고, 오늘 분은 `ONBOARDING.md`에도 요약됩니다.
 
 ## 10. 하네스 주입 (harness use) — 어떤 AI CLI/IDE든
 핵심 플랫폼은 하네스 중립이고, 쓸 하네스만 옵트인합니다(`platform/harnesses.yaml`). 진입규칙·스킬은

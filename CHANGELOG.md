@@ -2,6 +2,19 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.27.0] - 2026-06-12
+### Added
+- **일 단위 스탠드업 로그** — `history/standup/<날짜>.md`(템플릿 노드에 폴더 포함). `harness standup <node>`
+  (`--add`/`--today`/`--tomorrow`/`--show`/`--list`) + MCP `standup_add`/`standup_summary`. 형식은
+  `## [진행사항]`(시각 태그 항목) + `## [요약]`(오늘/내일). 오늘 분은 `ONBOARDING.md` 자동 인계서에도 요약.
+- **`harness start` 화살표 선택 UI** — 하네스·claude 권한·**claude 실행 디렉토리**를 ↑/↓·숫자·Enter 로
+  고르고 `.harness-local.json` 에 기본값 저장(stdlib, 의존성 없음; 비TTY는 번호 입력 폴백).
+### Changed
+- **`harness start` 우상단 pane** = tmux 치트시트 1회 출력 후 **자유 셸**(git watch 대체). 옵션 `--repo`→`--cwd`.
+- **`harness update` 충돌 처리** — ff 불가(분기) 시 머지로 상류 패치를 반영하고, 충돌 시 멈추지 않고
+  `CONFLICT: <file>`(rc=3)로 정확히 출력. 에이전트가 진입규칙(§5)대로 마커 해결→커밋→verify 후
+  자동/수동 해결 내역을 보고. 더티 트리면 머지 전 거부(로컬 작업 보호). git 시퀀스 임시 repo 로 검증.
+
 ## [0.26.1] - 2026-06-12
 ### Fixed
 - **CI(`validate-nodes`) 실패 수정** — 0.26.0 의 `tools/` 재정리 때 `.github/workflows/validate.yml` 의

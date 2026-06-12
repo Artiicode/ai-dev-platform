@@ -147,6 +147,19 @@ def generate(node_dir):
         L.append("- (verify 미실행 — `harness verify <node>`)")
     L.append("")
 
+    L.append("## 오늘 스탠드업")
+    try:
+        import standup
+        stxt = standup.show(node_dir).strip()
+    except Exception:
+        stxt = ""
+    if stxt:
+        idx = stxt.find("## [진행사항]")
+        L.append(stxt[idx:] if idx >= 0 else stxt)
+    else:
+        L.append("- (오늘 기록 없음 — `harness standup <node> --add ...`)")
+    L.append("")
+
     L.append("## 시작 절차")
     L.append("1. `platform/prompts/global-system.md` 규칙 숙지.")
     L.append("2. 활성 티켓의 `history/worklog/<티켓>.md` 확인.")
