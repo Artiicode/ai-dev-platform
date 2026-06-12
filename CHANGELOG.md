@@ -2,6 +2,14 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.27.1] - 2026-06-12
+### Changed
+- **`harness start` 작업 디렉토리 선택 제거** — claude 는 **clone 한 플랫폼 디렉토리(루트)** 에서 실행(기본).
+  `--cwd` 로만 변경. `.harness-local.json` 의 `claude_cwd` 불필요.
+- **tmux 치트시트 재디자인**(CLI 디자이너 에이전트) — 고정폭 ASCII 단축키를 앞에, 한글(double-width)
+  설명을 뒤에 둬 어떤 pane 너비에서도 정렬 유지. 은은한 ANSI 색.
+- **tmux 기본 window 이름 = `dev`**.
+
 ## [0.27.0] - 2026-06-12
 ### Added
 - **일 단위 스탠드업 로그** — `history/standup/<날짜>.md`(템플릿 노드에 폴더 포함). `harness standup <node>`

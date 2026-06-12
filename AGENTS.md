@@ -74,7 +74,7 @@
 | "테스트/검증 돌려줘" | `./harness verify <node>` (결과는 자동으로 ONBOARDING 에 반영) |
 | "오늘 한 일/스탠드업 정리해줘" | `./harness standup <node> --add "<진행항목>"` · 요약 `--today "..." --tomorrow "..."` · 보기 `--show` (일 단위 `history/standup/<날짜>.md`; 작업하며 수시로 갱신) |
 | "사용량/토큰 비용 보여줘 (usage)" | `./harness tool ai-usage-monitor -- --watch` (번들 도구; `toolkit/` 참고) |
-| "작업 세션/tmux 띄워줘" | `./harness start [세션이름]` (좌 claude/우상 치트시트+자유셸/우하 usage; 하네스·권한·작업디렉토리를 화살표 메뉴로 고르고 `.harness-local.json` 에 기본값 저장) |
+| "작업 세션/tmux 띄워줘" | `./harness start [세션이름]` (tmux window=`dev`; 좌 claude/우상 tmux 치트시트+자유셸/우하 usage; 하네스·claude 권한을 화살표 메뉴로 고르고 `.harness-local.json` 에 저장. claude 는 clone한 플랫폼 디렉토리에서 실행, `--cwd` 로 변경) |
 | "플랫폼 업데이트 받아줘" | `./harness update` (ff 가능하면 fast-forward, 분기 시 머지). **충돌(rc=3, `CONFLICT:` 출력) 시 너가 직접** 각 파일의 `<<<<<<< ======= >>>>>>>` 마커를 해결(상류 패치는 반드시 반영) → `git add` → `git commit --no-edit` → `harness verify`/`validate` → **무엇이 자동 해결됐고 무엇이 사람 확인 필요인지 유저에게 보고** |
 | 위험행동(ssh/scp/push/deploy/삭제) | `platform/policies/approval-gates.md` 게이트 통과 + MCP `request_approval` (사람이 최종 승인) |
 

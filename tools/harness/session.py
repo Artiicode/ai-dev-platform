@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-"""session — `harness start`: interactively pick/persist the default harness, claude launch
-flags, and claude working directory, then open a tmux workspace:
-left = claude (in the chosen dir) / right-top = empty shell / right-bottom = ai-usage-monitor.
+"""session — `harness start`: interactively pick/persist the default harness and claude launch
+flags, then open a tmux workspace (window "dev"): left = claude (in the cloned platform dir by
+default; --cwd overrides) / right-top = tmux cheatsheet then a free shell / right-bottom = usage.
 
 Selection uses a small stdlib arrow-key picker (↑/↓, number keys, Enter) — no extra deps,
 with a numbered-input fallback when stdin/stdout aren't a TTY. Machine-local choices live in
 .harness-local.json (gitignored) — not secrets, just per-user prefs kept out of the template.
 """
 from __future__ import annotations
-import glob
 import json
 import os
 import shutil
@@ -144,39 +143,26 @@ def _choose_claude_cmd(cfg, override_skip):
     return ["claude", "--dangerously-skip-permissions"] if skip else ["claude"]
 
 
-def _choose_workdir(cfg, override):
-    if override:
-        return os.path.abspath(os.path.expanduser(override))
-    if cfg.get("claude_cwd"):
-        return cfg["claude_cwd"]
-    opts = [("플랫폼 루트", ROOT)]
-    for repo in sorted(glob.glob(os.path.join(ROOT, "projects", "*-node", "repo"))):
-        if os.path.isdir(repo):
-            opts.append((os.path.relpath(repo, ROOT), repo))
-    opts.append(("직접 입력…", "__custom__"))
-    val = _select("claude 를 어느 디렉토리에서 실행할까요?", opts, 0)
-    if val == "__custom__":
-        val = _ask("디렉토리 경로: ", ROOT)
-    val = os.path.abspath(os.path.expanduser(val))
-    if _yes("이 디렉토리를 기본값으로 저장할까요? [Y/n]: "):
-        cfg["claude_cwd"] = val
-        _save_cfg(cfg)
-    return val
-
-
 def _cheatsheet_cmd():
-    """A command that prints a tmux cheatsheet once, then leaves the pane as a usable shell."""
-    lines = [
-        "──── tmux 단축키 (prefix = Ctrl-b) ────",
-        "  Ctrl-b d    detach(세션 유지)      tmux attach -t <세션>  재진입",
-        "  Ctrl-b ←↑↓→ / o   pane 이동        Ctrl-b z   pane 확대/복귀",
-        "  Ctrl-b [    스크롤(q 종료)          Ctrl-b c   새 창 / Ctrl-b , 창 이름",
-        "  Ctrl-b \"    가로분할  Ctrl-b %  세로분할   Ctrl-b x   pane 닫기",
-        "  Ctrl-b Space  레이아웃 순환         Ctrl-b &   창 닫기",
-        "──────────────────────────────  (이 pane은 자유롭게 명령 입력)",
+    """A bash command that prints a clean, aligned tmux cheatsheet once, then leaves the pane
+    as a usable shell. Fixed-width ASCII chords come first; Korean (double-width) descriptions
+    trail with nothing after them, so alignment holds at any pane width. ANSI via bash $'...'."""
+    C, R, B, D = "\\033[36m", "\\033[0m", "\\033[1m", "\\033[2m"   # cyan / reset / bold / dim
+    rows = [
+        ("C-b d", "      detach (분리)"),
+        ("C-b \\xe2\\x86\\x90 \\xe2\\x86\\x92 \\xe2\\x86\\x91 \\xe2\\x86\\x93", "  pane 이동 (o 순환)"),
+        ("C-b z", "      zoom 팬 확대/복원"),
+        ('C-b "', "      가로 분할 (split-h)"),
+        ("C-b %", "      세로 분할 (split-v)"),
+        ("C-b x", "      pane 닫기"),
+        ("C-b [", "      스크롤/복사 (q 종료)"),
+        ("C-b c , Spc", "  새 창 / 이름변경 / 레이아웃"),
     ]
-    quoted = " ".join("'%s'" % ln for ln in lines)
-    return "clear; printf '%s\\n' " + quoted
+    title = "$'%s%s┌─ tmux cheatsheet%s%s ──────────────%s  prefix: %sCtrl-b%s'" % (B, C, R, D, R, B, R)
+    args = [title]
+    args += ["$'  %s%s%s%s'" % (C, chord, R, desc) for chord, desc in rows]
+    args.append("$'  %sreattach%s   tmux attach -t <session>'" % (D, R))
+    return "clear; printf '%s\\n' " + " ".join(args)
 
 
 def _panes(session):
@@ -193,7 +179,8 @@ def start(session="harness", harness=None, skip_perms=None, cwd=None,
     subprocess.call([_py(), HARNESS_CLI, "use", h], cwd=ROOT)
 
     claude_cmd = _choose_claude_cmd(cfg, skip_perms)
-    workdir = _choose_workdir(cfg, cwd)
+    # Working dir defaults to the cloned platform directory (ROOT); --cwd overrides.
+    workdir = os.path.abspath(os.path.expanduser(cwd)) if cwd else ROOT
     if not os.path.isdir(workdir):
         sys.stderr.write("[start] 작업 디렉토리 없음: %s\n" % workdir)
         return 2
@@ -218,8 +205,8 @@ def start(session="harness", harness=None, skip_perms=None, cwd=None,
     def send(pane, cmd):
         subprocess.run(["tmux", "send-keys", "-t", pane, cmd, "Enter"], check=True)
 
-    # Layout: left | right(top / bottom) — all panes start in workdir; right-top stays an empty shell.
-    tmux("new-session", "-d", "-s", session, "-c", workdir)
+    # Layout: left | right(top / bottom) — all panes start in workdir. Window name = "dev".
+    tmux("new-session", "-d", "-s", session, "-n", "dev", "-c", workdir)
     p_left = _panes(session)[0]
     tmux("split-window", "-h", "-t", p_left, "-c", workdir)        # left | right
     p_right = [p for p in _panes(session) if p != p_left][0]
