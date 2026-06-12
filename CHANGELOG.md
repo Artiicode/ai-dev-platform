@@ -2,6 +2,12 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.26.1] - 2026-06-12
+### Fixed
+- **CI(`validate-nodes`) 실패 수정** — 0.26.0 의 `tools/` 재정리 때 `.github/workflows/validate.yml` 의
+  경로(`tools/validate_node.py`·`tools/gen_agent_rules.py`)를 갱신하지 못해 워크플로가 깨졌다.
+  `tools/node/validate_node.py`·`tools/harness/gen_agent_rules.py` 로 수정(두 CI 단계 로컬 재현 통과).
+
 ## [0.26.0] - 2026-06-11
 ### Changed
 - **`tools/` 의미별 재정리(이력 보존 `git mv`).** 루트엔 진입점 `harness_cli.py` 만 남기고:

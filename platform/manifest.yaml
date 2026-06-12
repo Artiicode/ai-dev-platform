@@ -1,6 +1,6 @@
 platform:
   name: ai-autodev-harness
-  version: 0.26.0          # SemVer (VERSION 파일과 동기화)
+  version: 0.26.1          # SemVer (VERSION 파일과 동기화)
   schema_version: 1         # 노드/인덱스 매니페스트 포맷 버전
 adapters:
   enabled: []               # 하네스 활성화는 platform/harnesses.yaml 에서(중립 기본)
