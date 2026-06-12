@@ -2,6 +2,13 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.27.2] - 2026-06-12
+### Added
+- **`harness update` 상류 이력 재작성 감지/재동기화** — 업스트림 force-push 로 공통 조상이 사라지면
+  머지가 불가하므로, `update` 가 이를 감지해 안내(rc=3)하고 `--resync` 시 HEAD 를
+  `backup-before-resync` 브랜치로 백업한 뒤 `origin` 으로 hard reset(노드/데이터 미추적이라 안전,
+  로컬 플랫폼 커밋은 백업 보존). 임시 repo 로 감지·복구 시퀀스 검증.
+
 ## [0.27.1] - 2026-06-12
 ### Changed
 - **`harness start` 작업 디렉토리 선택 제거** — claude 는 **clone 한 플랫폼 디렉토리(루트)** 에서 실행(기본).

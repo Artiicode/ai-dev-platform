@@ -208,6 +208,10 @@ source .venv/bin/activate
   AI 에이전트는 진입규칙(§5)에 따라 마커를 직접 해결 → `git add`/`commit` → `verify` 후 **무엇이 자동
   해결됐고 무엇이 사람 확인 필요한지 보고**합니다. 되돌리려면 `git merge --abort`. (커밋 안 된 로컬 변경이
   있으면 머지 전에 거부하니 먼저 커밋/스태시하세요.)
+- **상류 이력 재작성(force-push):** 업스트림이 force-push 로 이력을 재작성하면 로컬과 **공통 조상이 없어**
+  머지가 불가합니다. `update` 가 이를 감지해 안내(rc=3)하고, `./harness update --resync` 로 **HEAD 를
+  `backup-before-resync` 브랜치에 백업한 뒤 `origin` 으로 hard reset** 합니다(노드/데이터는 미추적이라 안전;
+  로컬 플랫폼 커밋은 백업 브랜치에 보존). 일회성 이벤트이며 일반 업데이트에는 영향이 없습니다.
 - **자동 1회 준비:** clone 본은 venv/git훅/진입규칙 심링크/벡터가 비어 있습니다. `./harness <명령>` 첫
   실행 시 `scripts/ensure_ready.sh` 가 자동으로 1회 준비하고 `.harness-ready`(머신-로컬 표식)를 남깁니다
   (있으면 건너뜀). MCP 서버 기동·`git pull`(post-merge 훅) 시에도 진입규칙·훅을 self-heal 합니다.

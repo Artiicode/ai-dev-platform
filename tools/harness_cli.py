@@ -98,6 +98,33 @@ def cmd_update(a):
     up = (git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}",
               capture_output=True, text=True).stdout.strip() or "origin/master")
 
+    # 0) Unrelated histories — no common ancestor with upstream. Happens when upstream history
+    #    was rewritten (force-push) or the remote was replaced. A normal merge would refuse or
+    #    explode in conflicts, so detect it and guide (or resync with --resync).
+    if not git("merge-base", "HEAD", up, capture_output=True, text=True).stdout.strip():
+        dirty = git("status", "--porcelain", capture_output=True, text=True).stdout.strip()
+        ahead = git("rev-list", "--count", "HEAD", "^" + up,
+                    capture_output=True, text=True).stdout.strip() or "?"
+        sys.stderr.write("[update] ⚠️ 상류와 공통 조상이 없습니다 — 업스트림 이력 재작성(force-push)으로 보입니다.\n")
+        sys.stderr.write("         유저 노드/데이터는 미추적이라 안전합니다.\n")
+        if not a.resync:
+            sys.stderr.write(
+                "[update] 재동기화하려면: `./harness update --resync`\n"
+                "         (현재 HEAD 를 'backup-before-resync' 브랜치로 백업한 뒤 `git reset --hard %s`).\n"
+                "         로컬 플랫폼 커밋 %s개는 백업 브랜치에 보존됩니다. 커밋 안 된 변경은 먼저 커밋/스태시.\n"
+                % (up, ahead))
+            return 3
+        if dirty:
+            sys.stderr.write("[update] 커밋 안 된 변경이 있어 resync 불가 — 먼저 커밋/스태시.\n")
+            return 1
+        git("branch", "-f", "backup-before-resync", "HEAD")
+        if git("reset", "--hard", up).returncode != 0:
+            sys.stderr.write("[update] reset 실패.\n")
+            return 1
+        print("[update] '%s' 이력으로 재동기화 완료 (백업: backup-before-resync)." % up)
+        _update_refresh()
+        return 0
+
     # 1) Fast-forward if we haven't diverged — the common, clean case.
     if git("merge", "--ff-only", up).returncode == 0:
         print("[update] fast-forward 완료 (%s)." % up)
@@ -410,7 +437,9 @@ def build_parser():
 
     p = sub.add_parser("install-hooks"); p.set_defaults(fn=cmd_installhooks)
 
-    p = sub.add_parser("update", help="플랫폼 업데이트(git pull --ff-only) + 의존성/훅/진입규칙 갱신")
+    p = sub.add_parser("update", help="플랫폼 업데이트(ff/머지) + 의존성/훅/진입규칙 갱신")
+    p.add_argument("--resync", action="store_true",
+                   help="상류 이력 재작성 시 HEAD 백업 후 origin 으로 hard reset")
     p.set_defaults(fn=cmd_update)
 
     p = sub.add_parser("models"); p.set_defaults(fn=cmd_models)
