@@ -220,7 +220,7 @@ def start(session="harness", harness=None, skip_perms=None, cwd=None,
 
     # Window 2 "subtask": today's personal daily plan (오늘 할 일), auto-refreshing so /add-task shows.
     # Pass the command as ONE quoted string so `watch` doesn't try to parse `--show` as its own option.
-    standup_view = 'watch -n 10 -t "%s %s standup --show"' % (_py(), HARNESS_CLI)
+    standup_view = 'watch -n 60 -t "%s %s standup --show"' % (_py(), HARNESS_CLI)
     tmux("new-window", "-t", session, "-n", "subtask", "-c", workdir)
     send("%s:subtask" % session, standup_view)
 

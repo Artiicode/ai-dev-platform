@@ -2,6 +2,10 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.28.1] - 2026-06-15
+### Changed
+- `harness start` subtask 윈도우 일일 플랜 갱신 주기 10초 → **60초**.
+
 ## [0.28.0] - 2026-06-15
 ### Added
 - **스탠드업에 [오늘 할 일] + carry-over** — 오늘 파일이 없으면 전날의 미완료(`- [ ]`)·[요약] '내일'을
