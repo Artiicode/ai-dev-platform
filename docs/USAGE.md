@@ -228,19 +228,23 @@ source .venv/bin/activate
   하네스(claude-code/cursor), ② claude 실행 방식(`--dangerously-skip-permissions` 여부)을 고르고
   `.harness-local.json`(머신-로컬, 미추적)에 저장합니다. 선택한 하네스의 진입규칙을 주입(`harness use`)한
   뒤 **tmux 세션**(window 이름 `dev`)을 띄웁니다. claude 는 **clone한 플랫폼 디렉토리**에서 실행됩니다:
+  세션은 두 윈도우입니다 — `dev`(작업)와 `subtask`(오늘 플랜):
   ```
-  ┌─────────────┬──────────────────────┐
-  │             │ 우상: tmux 치트시트 +  │   (1회 출력 후 자유 셸 — 명령 입력 가능)
-  │  좌: claude  ├──────────────────────┤
-  │             │ 우하: usage --watch    │   (ai-usage-monitor)
-  └─────────────┴──────────────────────┘
+  [dev]                                  [subtask]
+  ┌─────────────┬──────────────────────┐ ┌──────────────────────┐
+  │             │ 우상: tmux 치트시트 +  │ │  오늘 할 일 (watch)    │
+  │  좌: claude  ├──────────────────────┤ │  - [ ] 오후 2시 Qt …  │
+  │             │ 우하: usage --watch    │ │  (10초마다 갱신)       │
+  └─────────────┴──────────────────────┘ └──────────────────────┘
   ```
-  옵션: `--harness`, `--skip-perms`/`--no-skip-perms`, `--cwd <claude 실행 디렉토리>`(기본=플랫폼 루트),
-  `--no-tmux`, `--no-attach`. 예: `./harness start els2.0 --skip-perms`.
+  claude 는 **`./harness` 를 실행한 디렉토리**에서 뜹니다(`--cwd` 로 변경). 옵션: `--harness`,
+  `--skip-perms`/`--no-skip-perms`, `--cwd`, `--no-tmux`, `--no-attach`. 예: `./harness start els2.0 --skip-perms`.
   > tmux 필요(`sudo apt-get install tmux`). 이미 tmux 안이면 중첩될 수 있으니 평범한 터미널에서 실행 권장.
-- **일 단위 스탠드업:** `./harness standup <node>` — 스크럼용 일일 로그(`history/standup/<날짜>.md`).
-  추가 `--add "<진행항목>"`, 요약 `--today "..." --tomorrow "..."`, 보기 `--show [--date ...]`, 목록 `--list`.
-  에이전트가 작업하며 수시로 갱신(MCP `standup_add`/`standup_summary`)하고, 오늘 분은 `ONBOARDING.md`에도 요약됩니다.
+- **일 단위 스탠드업 / 할 일:** `./harness standup [node]` — 일일 로그(`<날짜>.md`, 모두 리스트).
+  할 일 `--add-task "오후 2시 Qt 세미나"`(또는 `/add-task`), 진행 `--add "..."`, 요약 `--today/--tomorrow`,
+  보기 `--show`, 목록 `--list`. **노드 생략 = 플랫폼 개인 플랜**(`<루트>/standup/`, subtask 창에 표시);
+  `<node>` 지정 = 프로젝트 standup(`history/standup/`, ONBOARDING 에 요약). 오늘 파일이 없으면 **전날
+  미완료(`- [ ]`)·내일계획을 오늘로 carry-over**(없으면 "없음").
 
 ## 10. 하네스 주입 (harness use) — 어떤 AI CLI/IDE든
 핵심 플랫폼은 하네스 중립이고, 쓸 하네스만 옵트인합니다(`platform/harnesses.yaml`). 진입규칙·스킬은

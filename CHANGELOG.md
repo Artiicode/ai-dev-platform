@@ -2,6 +2,16 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.28.0] - 2026-06-15
+### Added
+- **스탠드업에 [오늘 할 일] + carry-over** — 오늘 파일이 없으면 전날의 미완료(`- [ ]`)·[요약] '내일'을
+  오늘 할 일로 자동 이월(없으면 "없음"). `/add-task "오후 2시 Qt 세미나"`(= `harness standup --add-task`)
+  로 추가. **노드 생략 = 플랫폼 개인 일일 플랜**(`<루트>/standup/`, 미추적), `<node>` 지정 = 프로젝트 standup.
+- **`harness start` 두 번째 윈도우 `subtask`** — 오늘 플랜을 `watch` 로 표시(10초 갱신; `/add-task` 즉시 반영).
+  `platform/commands/add-task.md` 추가(하네스 슬래시 커맨드로 투영).
+### Changed
+- **`harness start` 좌측 claude 가 `./harness` 실행 디렉토리에서 실행**(기존: 강제 플랫폼 루트). `--cwd` 로 변경.
+
 ## [0.27.2] - 2026-06-12
 ### Added
 - **`harness update` 상류 이력 재작성 감지/재동기화** — 업스트림 force-push 로 공통 조상이 사라지면

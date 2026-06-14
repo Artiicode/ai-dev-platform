@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
-"""standup — per-node daily standup log (history/standup/<YYYY-MM-DD>.md).
+"""standup — daily standup / task log (<base>/<YYYY-MM-DD>.md).
 
-Day-keyed scrum tracking: what's in progress today, and what's planned next, so a new
-day's standup can be summarized at a glance. The agent updates it as work proceeds
-(incrementally, in a batch, or on request). Format:
+Two bases share the same format and tooling:
+  - node base:     <node>/history/standup        (project work standup; feeds ONBOARDING)
+  - platform base: <ROOT>/standup                 (personal daily plan; shown in `harness start`)
 
+Format (lists everywhere):
+    ## [오늘 할 일]
+    - [ ] 오후 2시 Qt 세미나        # /add-task 로 추가, 완료 시 - [x]
     ## [진행사항]
-    - [HH:MM] <무엇을 진행 중인지>
+    - [HH:MM] 무엇을 진행 중인지
     ## [요약]
-    - 오늘: <오늘 진행 중인 것>
-    - 내일: <내일 할 예정>
+    - 오늘: ...
+    - 내일: ...
+
+When today's file doesn't exist it is created, seeding [오늘 할 일] from the most recent
+previous day: its undone tasks (`- [ ]`) plus its [요약] '내일' line. Empty → "- 없음".
 """
 from __future__ import annotations
 import argparse
@@ -19,9 +25,11 @@ import os
 import re
 import sys
 
+TASKS = "## [오늘 할 일]"
 PROGRESS = "## [진행사항]"
 SUMMARY = "## [요약]"
-_PLACEHOLDER = "- (작업하며 추가됨)"
+_NONE = "- 없음"
+_PH_PROGRESS = "- (작업하며 추가됨)"
 
 
 def _today():
@@ -30,6 +38,14 @@ def _today():
 
 def _now_hm():
     return datetime.datetime.now().strftime("%H:%M")
+
+
+def node_base(node_dir):
+    return os.path.join(node_dir, "history", "standup")
+
+
+def platform_base(root):
+    return os.path.join(root, "standup")
 
 
 def _node_name(node_dir):
@@ -42,25 +58,17 @@ def _node_name(node_dir):
     return os.path.basename(node_dir.rstrip("/")).removesuffix("-node")
 
 
-def path(node_dir, date=None):
-    return os.path.join(node_dir, "history", "standup", "%s.md" % (date or _today()))
+def path(base, date=None):
+    return os.path.join(base, "%s.md" % (date or _today()))
 
 
-def _template(node_name, date):
-    return ("---\ntitle: 데일리 스탠드업\ndate: %s\n---\n# 스탠드업 — %s — %s\n\n"
-            "%s\n%s\n\n%s\n- 오늘: \n- 내일: \n" % (date, node_name, date, PROGRESS, _PLACEHOLDER, SUMMARY))
+def list_days(base):
+    days = [os.path.basename(x)[:-3] for x in glob.glob(os.path.join(base, "*.md"))]
+    return sorted(x for x in days if re.match(r"\d{4}-\d{2}-\d{2}$", x))
 
 
-def _ensure(node_dir, date):
-    p = path(node_dir, date)
-    os.makedirs(os.path.dirname(p), exist_ok=True)
-    if not os.path.exists(p):
-        open(p, "w", encoding="utf-8").write(_template(_node_name(node_dir), date))
-    return p
-
-
-def _section_bounds(lines, header):
-    """(header_index, end_index) for a '## ...' section; end is next '## ' or EOF. (-1,-1) if absent."""
+def _section(lines, header):
+    """(header_index, end_index) for a '## ...' section; end = next '## ' or EOF. (-1,-1) if absent."""
     try:
         h = next(i for i, l in enumerate(lines) if l.strip() == header)
     except StopIteration:
@@ -71,80 +79,125 @@ def _section_bounds(lines, header):
     return h, e
 
 
-def add(node_dir, item, date=None):
+def _carry_over(base, today):
+    """Seed task list from the most recent previous day: undone tasks + '내일' plan."""
+    prev = [d for d in list_days(base) if d < today]
+    if not prev:
+        return []
+    lines = open(path(base, prev[-1]), encoding="utf-8").read().splitlines()
+    out = []
+    h, e = _section(lines, TASKS)
+    if h >= 0:
+        for l in lines[h + 1:e]:
+            m = re.match(r"\s*-\s*\[ \]\s*(.+)", l)   # unchecked only
+            if m:
+                out.append(m.group(1).strip())
+    for l in lines:
+        m = re.match(r"\s*-\s*내일:\s*(.+)", l)
+        if m and m.group(1).strip():
+            out.append(m.group(1).strip())
+    # dedup preserving order
+    seen, dedup = set(), []
+    for t in out:
+        if t not in seen:
+            seen.add(t)
+            dedup.append(t)
+    return dedup
+
+
+def _template(name, date, tasks):
+    task_lines = "\n".join("- [ ] %s" % t for t in tasks) if tasks else _NONE
+    return ("---\ntitle: 데일리 스탠드업\ndate: %s\n---\n# 스탠드업 — %s — %s\n\n"
+            "%s\n%s\n\n%s\n%s\n\n%s\n- 오늘: \n- 내일: \n"
+            % (date, name, date, TASKS, task_lines, PROGRESS, _PH_PROGRESS, SUMMARY))
+
+
+def _ensure(base, name="daily", date=None):
     date = date or _today()
-    p = _ensure(node_dir, date)
+    p = path(base, date)
+    os.makedirs(base, exist_ok=True)
+    if not os.path.exists(p):
+        open(p, "w", encoding="utf-8").write(_template(name, date, _carry_over(base, date)))
+    return p
+
+
+def _append_to_section(base, header, line, drop, name, date):
+    p = _ensure(base, name, date)
     lines = open(p, encoding="utf-8").read().splitlines()
-    h, e = _section_bounds(lines, PROGRESS)
+    h, e = _section(lines, header)
     if h < 0:
-        lines += ["", PROGRESS]
+        lines += ["", header]
         h, e = len(lines) - 1, len(lines)
-    body = [l for l in lines[h + 1:e] if l.strip() and l.strip() != _PLACEHOLDER]
-    body.append("- [%s] %s" % (_now_hm(), item))
+    body = [l for l in lines[h + 1:e] if l.strip() and l.strip() not in drop]
+    body.append(line)
     new = lines[:h + 1] + [""] + body + [""] + lines[e:]
     open(p, "w", encoding="utf-8").write("\n".join(new).rstrip() + "\n")
     return p
 
 
-def set_summary(node_dir, today=None, tomorrow=None, date=None):
-    date = date or _today()
-    p = _ensure(node_dir, date)
+def add_task(base, text, name="daily", date=None):
+    return _append_to_section(base, TASKS, "- [ ] %s" % text, {_NONE}, name, date)
+
+
+def add(base, item, name="daily", date=None):
+    return _append_to_section(base, PROGRESS, "- [%s] %s" % (_now_hm(), item), {_PH_PROGRESS}, name, date)
+
+
+def set_summary(base, today=None, tomorrow=None, name="daily", date=None):
+    p = _ensure(base, name, date)
     lines = open(p, encoding="utf-8").read().splitlines()
-    found_today = found_tomorrow = False
+    ft = fm = False
     for k, l in enumerate(lines):
         s = l.strip()
         if today is not None and s.startswith("- 오늘:"):
             lines[k] = "- 오늘: %s" % today
-            found_today = True
+            ft = True
         if tomorrow is not None and s.startswith("- 내일:"):
             lines[k] = "- 내일: %s" % tomorrow
-            found_tomorrow = True
+            fm = True
     extra = []
-    if today is not None and not found_today:
+    if today is not None and not ft:
         extra.append("- 오늘: %s" % today)
-    if tomorrow is not None and not found_tomorrow:
+    if tomorrow is not None and not fm:
         extra.append("- 내일: %s" % tomorrow)
     if extra:
-        h, e = _section_bounds(lines, SUMMARY)
-        if h < 0:
-            lines += ["", SUMMARY] + extra
-        else:
-            lines = lines[:e] + extra + lines[e:]
+        h, e = _section(lines, SUMMARY)
+        lines = (lines + ["", SUMMARY] + extra) if h < 0 else (lines[:e] + extra + lines[e:])
     open(p, "w", encoding="utf-8").write("\n".join(lines).rstrip() + "\n")
     return p
 
 
-def show(node_dir, date=None):
-    p = path(node_dir, date)
+def show(base, date=None, ensure=False, name="daily"):
+    if ensure:
+        _ensure(base, name, date)
+    p = path(base, date)
     return open(p, encoding="utf-8").read() if os.path.exists(p) else ""
 
 
-def list_days(node_dir):
-    d = os.path.join(node_dir, "history", "standup")
-    days = [os.path.basename(x)[:-3] for x in glob.glob(os.path.join(d, "*.md"))]
-    return sorted(x for x in days if re.match(r"\d{4}-\d{2}-\d{2}$", x))
-
-
 def main():
-    ap = argparse.ArgumentParser(description="per-node daily standup log")
-    ap.add_argument("--node", required=True, help="노드 디렉토리 경로")
-    ap.add_argument("--add", default=None, help="[진행사항] 에 항목 추가")
-    ap.add_argument("--today", default=None, help="[요약] 오늘 진행 중")
-    ap.add_argument("--tomorrow", default=None, help="[요약] 내일 예정")
-    ap.add_argument("--date", default=None, help="대상 날짜(기본 오늘, YYYY-MM-DD)")
-    ap.add_argument("--show", action="store_true", help="해당 날짜 스탠드업 출력")
-    ap.add_argument("--list", action="store_true", help="기록된 날짜 목록")
+    ap = argparse.ArgumentParser(description="daily standup / task log")
+    ap.add_argument("--base", required=True, help="standup 폴더 경로")
+    ap.add_argument("--name", default="daily")
+    ap.add_argument("--add-task", default=None)
+    ap.add_argument("--add", default=None)
+    ap.add_argument("--today", default=None)
+    ap.add_argument("--tomorrow", default=None)
+    ap.add_argument("--date", default=None)
+    ap.add_argument("--show", action="store_true")
+    ap.add_argument("--list", action="store_true")
     a = ap.parse_args()
-    nd = a.node
     if a.list:
-        print("\n".join(list_days(nd)) or "(없음)")
+        print("\n".join(list_days(a.base)) or "(없음)")
         return 0
+    did = False
+    if a.add_task:
+        add_task(a.base, a.add_task, a.name, a.date); did = True
     if a.add:
-        print("[standup] 추가:", add(nd, a.add, a.date))
+        add(a.base, a.add, a.name, a.date); did = True
     if a.today is not None or a.tomorrow is not None:
-        print("[standup] 요약 갱신:", set_summary(nd, a.today, a.tomorrow, a.date))
-    if a.show or not (a.add or a.today is not None or a.tomorrow is not None):
-        sys.stdout.write(show(nd, a.date) or "(스탠드업 없음 — --add 로 시작)\n")
+        set_summary(a.base, a.today, a.tomorrow, a.name, a.date); did = True
+    if a.show or not did:
+        sys.stdout.write(show(a.base, a.date, ensure=True, name=a.name) or "(없음)\n")
     return 0
 
 

@@ -150,7 +150,7 @@ def generate(node_dir):
     L.append("## 오늘 스탠드업")
     try:
         import standup
-        stxt = standup.show(node_dir).strip()
+        stxt = standup.show(standup.node_base(node_dir)).strip()
     except Exception:
         stxt = ""
     if stxt:

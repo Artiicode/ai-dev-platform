@@ -179,8 +179,9 @@ def start(session="harness", harness=None, skip_perms=None, cwd=None,
     subprocess.call([_py(), HARNESS_CLI, "use", h], cwd=ROOT)
 
     claude_cmd = _choose_claude_cmd(cfg, skip_perms)
-    # Working dir defaults to the cloned platform directory (ROOT); --cwd overrides.
-    workdir = os.path.abspath(os.path.expanduser(cwd)) if cwd else ROOT
+    # Left pane runs where `harness` was invoked (the cloned platform dir in the normal case);
+    # --cwd overrides.
+    workdir = os.path.abspath(os.path.expanduser(cwd)) if cwd else os.getcwd()
     if not os.path.isdir(workdir):
         sys.stderr.write("[start] 작업 디렉토리 없음: %s\n" % workdir)
         return 2
@@ -216,9 +217,18 @@ def start(session="harness", harness=None, skip_perms=None, cwd=None,
     send(p_rbot, usage_cmd)            # 우하단: ai-usage-monitor --watch
     send(p_right, _cheatsheet_cmd())   # 우상단: tmux 치트시트 1회 출력 후 자유 셸
     send(p_left, " ".join(claude_cmd))  # 좌: claude (in workdir)
+
+    # Window 2 "subtask": today's personal daily plan (오늘 할 일), auto-refreshing so /add-task shows.
+    # Pass the command as ONE quoted string so `watch` doesn't try to parse `--show` as its own option.
+    standup_view = 'watch -n 10 -t "%s %s standup --show"' % (_py(), HARNESS_CLI)
+    tmux("new-window", "-t", session, "-n", "subtask", "-c", workdir)
+    send("%s:subtask" % session, standup_view)
+
+    tmux("select-window", "-t", "%s:dev" % session)
     tmux("select-pane", "-t", p_left)
 
-    print("[start] tmux 세션 '%s': 좌=claude(%s) / 우상=치트시트+셸 / 우하=usage" % (session, workdir))
+    print("[start] tmux '%s': [dev] 좌=claude(%s)/우상=치트시트+셸/우하=usage  ·  [subtask] 오늘 플랜"
+          % (session, workdir))
     if attach:
         return subprocess.call(["tmux", "attach", "-t", session])
     print("[start] attach: tmux attach -t %s" % session)

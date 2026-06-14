@@ -288,7 +288,7 @@ def standup_add(item: str, session_token: str) -> dict:
     if sec:
         return {"error": "평문 시크릿 의심(%s)." % sec}
     import standup
-    p = standup.add(NODE_DIR, item)
+    p = standup.add(standup.node_base(NODE_DIR), item, standup._node_name(NODE_DIR))
     _refresh_onboarding()
     return {"ok": True, "path": os.path.relpath(p, NODE_DIR)}
 
@@ -299,7 +299,8 @@ def standup_summary(today: str = "", tomorrow: str = "", session_token: str = ""
     if not _need_token(session_token):
         return {"error": "유효한 session_token 필요 — 먼저 begin_session() 호출."}
     import standup
-    p = standup.set_summary(NODE_DIR, today or None, tomorrow or None)
+    p = standup.set_summary(standup.node_base(NODE_DIR), today or None, tomorrow or None,
+                            standup._node_name(NODE_DIR))
     _refresh_onboarding()
     return {"ok": True, "path": os.path.relpath(p, NODE_DIR)}
 

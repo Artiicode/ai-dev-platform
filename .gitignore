@@ -41,6 +41,9 @@ GEMINI.md
 # 머신-로컬 세션 환경설정(기본 하네스/claude 플래그) — 시크릿 아님, 유저별이라 미추적.
 .harness-local.json
 
+# 플랫폼 레벨 개인 일일 플랜/스탠드업(harness start subtask 윈도우) — 유저별·머신-로컬.
+/standup/
+
 # 상태/락(전이적 런타임 — 절대 커밋 금지)
 **/state/lock.json
 **/state/ingest.json

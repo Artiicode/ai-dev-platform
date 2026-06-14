@@ -207,17 +207,23 @@ def cmd_start(a):
 
 def cmd_standup(a):
     import standup
-    nd = resolve_node(a.node)
+    if a.node:                                   # node-level (project work standup)
+        nd = resolve_node(a.node)
+        base, name = standup.node_base(nd), standup._node_name(nd)
+    else:                                        # platform-level (personal daily plan)
+        base, name = standup.platform_base(ROOT), "daily"
     if a.list:
-        print("\n".join(standup.list_days(nd)) or "(없음)")
+        print("\n".join(standup.list_days(base)) or "(없음)")
         return 0
     did = False
+    if a.add_task:
+        standup.add_task(base, a.add_task, name, a.date); did = True
     if a.add:
-        print("[standup] + %s" % standup.add(nd, a.add, a.date)); did = True
+        standup.add(base, a.add, name, a.date); did = True
     if a.today is not None or a.tomorrow is not None:
-        print("[standup] 요약 %s" % standup.set_summary(nd, a.today, a.tomorrow, a.date)); did = True
+        standup.set_summary(base, a.today, a.tomorrow, name, a.date); did = True
     if a.show or not did:
-        sys.stdout.write(standup.show(nd, a.date) or "(스탠드업 없음 — --add 로 시작)\n")
+        sys.stdout.write(standup.show(base, a.date, ensure=True, name=name) or "(없음)\n")
     return 0
 
 
@@ -472,8 +478,9 @@ def build_parser():
     p.add_argument("--no-attach", action="store_true", help="세션만 구성하고 attach 안 함(테스트/원격)")
     p.set_defaults(fn=cmd_start)
 
-    p = sub.add_parser("standup", help="일 단위 스탠드업 로그(진행사항/요약): history/standup/<날짜>.md")
-    p.add_argument("node")
+    p = sub.add_parser("standup", help="일 단위 스탠드업/할일 로그(<날짜>.md). 노드 생략 시 플랫폼 개인 일일 플랜")
+    p.add_argument("node", nargs="?", default=None, help="노드명(생략 시 플랫폼 레벨 개인 플랜)")
+    p.add_argument("--add-task", default=None, help="[오늘 할 일] 에 항목 추가 (/add-task)")
     p.add_argument("--add", default=None, help="[진행사항] 에 항목 추가")
     p.add_argument("--today", default=None, help="[요약] 오늘 진행 중")
     p.add_argument("--tomorrow", default=None, help="[요약] 내일 예정")
