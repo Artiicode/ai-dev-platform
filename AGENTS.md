@@ -78,6 +78,7 @@
 | "cursor/gemini/copilot 쓸게" | `./harness use <harness>` (진입규칙·스킬 로컬 생성) |
 | "bitbucket/jira/figma MCP 붙여줘" | `platform/mcp-servers.yaml` 의 `enabled` 에 해당 서버 추가(없으면 `servers:` 에 정의; **레지스트리엔 `${ENV_VAR}` 참조만**) → `./harness mcp <harness> --node <node>` → **자격증명은 `.env`(gitignored)에 넣게 안내**(자동 주입, export 아님) |
 | "이 데이터 넣어줘/인제스트" | 파일을 `projects/<node>-node/data/update/` 에 두고 `./harness ingest <node>` (원본→archives, 출처→info/index.yaml) |
+| "여러 프로젝트가 공통으로 쓸 자료야 / 공통 컨벤션·레퍼런스" | 공유 노드에 **한 번만** 적재: `./harness init _shared`(없으면) → `_shared` 의 `data/update/` 에 두고 `./harness ingest _shared`. 그 자료를 쓸 프로젝트는 manifest `node.shares: [_shared]`(또는 `init --shares _shared`) — 검색/읽기가 own+shared 로 페더레이션된다. 매 노드에 복붙하지 말 것 |
 | "검색/찾아줘" (의미 검색) | MCP `search_info`/`search_all` 또는 `./harness search <node> "<질의>"` |
 | "테스트/검증 돌려줘" | `./harness verify <node>` (결과는 자동으로 ONBOARDING 에 반영 + 노드 git 자동 커밋) |
 | "노드 변경분 저장/커밋해줘" | `./harness save <node> -m "<요약>"` (노드 메타 git 커밋; `/repo` 는 외부 관리라 제외). ingest/onboard/verify·MCP 쓰기는 자동 커밋되므로 보통 직접 편집분만 |

@@ -32,7 +32,7 @@ _PRIVATE_GITIGNORE = (
 )
 
 
-def init(name, link_type, url, ref, force, target=None, private=False):
+def init(name, link_type, url, ref, force, target=None, private=False, shares=None):
     if not os.path.isdir(TEMPLATE):
         print("[init] 템플릿 없음: %s" % TEMPLATE, file=sys.stderr); return 1
     dest = os.path.join(ROOT, "projects", "%s-node" % name)
@@ -57,6 +57,11 @@ def init(name, link_type, url, ref, force, target=None, private=False):
     if private:
         # Mark the node private; data/originals/derived info stay local (see node .gitignore below).
         s = s.replace("node:\n", "node:\n  private: true\n", 1)
+    if shares:
+        # Opt into shared knowledge nodes (read-only search/read federation).
+        names = [x.strip() for x in shares.split(",") if x.strip()] if isinstance(shares, str) else list(shares)
+        if names:
+            s = s.replace("node:\n", "node:\n  shares: [%s]\n" % ", ".join(names), 1)
     open(man, "w", encoding="utf-8").write(s)
     if private:
         open(os.path.join(dest, ".gitignore"), "w", encoding="utf-8").write(_PRIVATE_GITIGNORE)
@@ -96,9 +101,10 @@ def main():
     ap.add_argument("--ref", default=None, help="브랜치/태그/커밋")
     ap.add_argument("--target", default=None, help="link-type=symlink 의 대상 디렉토리(절대경로 권장)")
     ap.add_argument("--private", action="store_true", help="기밀 노드: 데이터/산출물 미추적")
+    ap.add_argument("--shares", default=None, help="공유 지식 노드(쉼표구분, 예: _shared)")
     ap.add_argument("--force", action="store_true")
     a = ap.parse_args()
-    sys.exit(init(a.name, a.link_type, a.url, a.ref, a.force, a.target, a.private))
+    sys.exit(init(a.name, a.link_type, a.url, a.ref, a.force, a.target, a.private, a.shares))
 
 
 if __name__ == "__main__":

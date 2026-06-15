@@ -2,6 +2,16 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.31.0] - 2026-06-15
+### Added
+- **프로젝트 간 공유 지식 — 공유 노드 + 검색 페더레이션(ADR 0016).** 공통 자료(컨벤션·레퍼런스·HW
+  데이터시트)를 매 노드에 복제하던 것을, 전용 **공유 노드**(예: `harness init _shared`)에 한 번만 ingest
+  하고 프로젝트가 manifest `node.shares: [_shared]`(또는 `init --shares _shared`)로 opt-in 하도록 변경.
+  MCP `search_info`/`search_all`/`read_md`/`query_sql`/`list_info` 와 `harness search` 가 **자기 `info/`
+  + 공유 노드 `info/`** 를 합쳐 질의(거리순 병합, 출처 노드 태깅). 단방향·읽기전용. `tools/lib/shared_nodes.py`
+  추가, manifest 스키마에 `node.shares`, `validate_node` 가 미해석 shares 경고. 임시 노드로 페더레이션
+  방향성(own↔shared)·validate·list_info 검증.
+
 ## [0.30.0] - 2026-06-15
 ### Added
 - **노드 메타 자체 git — 에이전트 자동·강제 관리(ADR 0015).** `projects/<name>-node/`가 자기 자신의

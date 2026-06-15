@@ -4,6 +4,7 @@ node:
   name: REPLACE_ME           # 예: my_proj
   schema_version: 1
   harness_min_version: 0.1.0
+  # shares: [_shared]        # (선택) 읽기전용 공유 지식 노드. 검색/읽기가 own+shared 로 페더레이션
 link:
   type: git-clone            # path | git-submodule | git-clone | symlink
   url: git@github.com:org/REPLACE_ME.git

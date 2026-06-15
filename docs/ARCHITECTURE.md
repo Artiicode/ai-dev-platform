@@ -240,6 +240,13 @@ data/update/<아무 확장자>  ──/update──▶  tools/data-to-info/route
 임계값(`md_max_chars` 등)은 manifest로 오버라이드. 충돌 정보는 **조용히 덮어쓰지 않고** `index.yaml`에
 supersedes 관계로 버전을 남긴다.
 
+**프로젝트 간 공유 지식(페더레이션, ADR 0016).** 공통 자료(컨벤션·레퍼런스)는 매 노드에 복제하지 않고
+전용 **공유 노드**(예: `_shared-node`)에 한 번만 적재한다. 프로젝트는 manifest `node.shares: [_shared]`로
+읽기전용 의존을 선언하고, MCP 검색/읽기가 **자기 `info/` + 공유 노드 `info/`** 를 합쳐 질의한다(거리순 병합,
+출처 노드 태깅). 단방향·읽기전용이라 공유 노드는 프로젝트를 보지 않는다. 임베딩 차원은 `models.yaml`로
+통일돼 노드/공유 간 호환된다. `platform/`(prompts·policies·skills)이 공통 *설정* 레이어라면, 공유 노드는
+공통 *지식*(검색 가능한 info) 레이어다.
+
 **추천 기존 툴체인:** 추출 `unstructured`/`docling`/`markitdown`/`pandoc`(+OCR `tesseract`/비전모델),
 정형 `SQLite`/`DuckDB`, 벡터 `sqlite-vec`/`lancedb`/`chroma`, 임베딩 LiteLLM 경유. (로컬 파일 기반 우선 —
 git 친화·이식성·오프라인.)

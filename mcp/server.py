@@ -88,6 +88,24 @@ def _get_embedder():
     return _embedder
 
 
+def _shared_dirs():
+    """Shared-knowledge node dirs this node opts into (manifest node.shares). Read-only."""
+    try:
+        import shared_nodes
+        return shared_nodes.resolve(NODE_DIR)
+    except Exception:
+        return []
+
+
+def _search_dirs():
+    """This node first, then its shared nodes — the federation order for search/read."""
+    return [NODE_DIR] + _shared_dirs()
+
+
+def _origin_of(ndir):
+    return "self" if os.path.abspath(ndir) == os.path.abspath(NODE_DIR) else os.path.basename(ndir)
+
+
 def _load_index():
     p = os.path.join(INFO, "index.yaml")
     if not os.path.exists(p):
@@ -119,24 +137,49 @@ def list_info() -> dict:
         except Exception:
             pass
         con.close()
-    return {"node": NODE_DIR, "md_files": md, "sql_dbs": dbs, "vector_chunks": vec_chunks}
+    # Shared knowledge nodes (read-only) this node federates over (manifest node.shares).
+    shared = []
+    for sdir in _shared_dirs():
+        sv = os.path.join(sdir, "info", "vector", "store.db")
+        n = 0
+        if os.path.exists(sv):
+            con = sqlite3.connect(sv)
+            try:
+                n = con.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
+            except Exception:
+                pass
+            con.close()
+        shared.append({"node": os.path.basename(sdir), "vector_chunks": n})
+    return {"node": NODE_DIR, "md_files": md, "sql_dbs": dbs, "vector_chunks": vec_chunks,
+            "shares": shared}
 
 
 @mcp.tool()
 def search_info(query: str, k: int = 5) -> list:
-    """벡터 RAG 시맨틱 검색. 가장 관련 있는 청크를 출처(provenance)와 함께 반환."""
+    """벡터 RAG 시맨틱 검색(이 노드 + manifest `node.shares` 의 공유 노드). 거리순 병합, 출처 노드 태깅."""
     import vectorstore
-    vec_path = os.path.join(INFO, "vector", "store.db")
-    if not os.path.exists(vec_path):
-        return [{"error": "벡터 스토어 없음. 먼저 router 로 인제스트하세요."}]
     emb = _get_embedder()
-    store = vectorstore.VectorStore(vec_path, emb.dim)
     qv = emb.embed_query([query])[0]      # 쿼리 비대칭 인코딩(Qwen instruction)
-    hits = store.search(qv, k)
-    store.close()
-    for h in hits:                       # 출처 종류 태깅(위키 vs RAG)
-        h["kind"] = "wiki" if str(h.get("doc_id", "")).startswith("wiki:") else "rag"
-    return hits
+    results = []
+    for ndir in _search_dirs():
+        vec_path = os.path.join(ndir, "info", "vector", "store.db")
+        if not os.path.exists(vec_path):
+            continue
+        try:                              # 임베딩 차원 불일치 등은 그 노드만 건너뜀
+            store = vectorstore.VectorStore(vec_path, emb.dim)
+            hits = store.search(qv, k)
+            store.close()
+        except Exception:
+            continue
+        origin = _origin_of(ndir)
+        for h in hits:                    # 출처 종류(위키/RAG) + 출처 노드 태깅
+            h["kind"] = "wiki" if str(h.get("doc_id", "")).startswith("wiki:") else "rag"
+            h["origin"] = origin
+        results.extend(hits)
+    if not results:
+        return [{"error": "벡터 스토어 없음(이 노드/공유 노드 모두). 먼저 router 로 인제스트하세요."}]
+    results.sort(key=lambda h: h.get("distance", 9e9))
+    return results[:k]
 
 
 @mcp.tool()
@@ -146,14 +189,17 @@ def search_all(query: str, k: int = 5) -> dict:
     hits = [h for h in search_info(query, k) if "error" not in h]
     toks = [t.lower() for t in re.findall(r"[A-Za-z0-9가-힣]{3,}", query)]
     sql_matches = []
-    for dbp in glob.glob(os.path.join(INFO, "db", "*.sqlite")):
-        con = sqlite3.connect(dbp)
-        for (tbl,) in con.execute("SELECT name FROM sqlite_master WHERE type='table'"):
-            cols = [r[1] for r in con.execute('PRAGMA table_info("%s")' % tbl)]
-            hay = (tbl + " " + " ".join(cols)).lower()
-            if not toks or any(t in hay for t in toks):
-                sql_matches.append({"db": os.path.basename(dbp), "table": tbl, "columns": cols})
-        con.close()
+    for ndir in _search_dirs():
+        origin = _origin_of(ndir)
+        for dbp in glob.glob(os.path.join(ndir, "info", "db", "*.sqlite")):
+            con = sqlite3.connect(dbp)
+            for (tbl,) in con.execute("SELECT name FROM sqlite_master WHERE type='table'"):
+                cols = [r[1] for r in con.execute('PRAGMA table_info("%s")' % tbl)]
+                hay = (tbl + " " + " ".join(cols)).lower()
+                if not toks or any(t in hay for t in toks):
+                    sql_matches.append({"db": os.path.basename(dbp), "table": tbl,
+                                        "columns": cols, "origin": origin})
+            con.close()
     return {"hits": hits, "sql_matches": sql_matches}
 
 
@@ -169,12 +215,22 @@ def query_sql(sql: str, db: str | None = None) -> dict:
         return {"error": "읽기 전용: SELECT/WITH/PRAGMA 만 허용"}
     con = sqlite3.connect(":memory:")
     attached = []
-    dbfiles = ([os.path.join(INFO, "db", db)] if db
-               else glob.glob(os.path.join(INFO, "db", "*.sqlite")))
+    # Federate over this node + shared nodes. db= picks the first matching basename.
+    dbfiles = []
+    for ndir in _search_dirs():
+        ddir = os.path.join(ndir, "info", "db")
+        if db:
+            p = os.path.join(ddir, db)
+            if os.path.exists(p):
+                dbfiles.append(p); break
+        else:
+            dbfiles.extend(sorted(glob.glob(os.path.join(ddir, "*.sqlite"))))
+    if db and not dbfiles:
+        return {"error": f"db 없음: {db} (이 노드/공유 노드 모두)"}
     for dbp in dbfiles:
-        if not os.path.exists(dbp):
-            return {"error": f"db 없음: {dbp}"}
         schema = "".join(c if c.isalnum() else "_" for c in os.path.splitext(os.path.basename(dbp))[0])
+        while schema in attached:                 # basename collision across nodes → uniquify
+            schema += "_"
         con.execute(f"ATTACH DATABASE ? AS {schema}", (dbp,))
         attached.append(schema)
     try:
@@ -190,11 +246,14 @@ def query_sql(sql: str, db: str | None = None) -> dict:
 
 @mcp.tool()
 def read_md(name: str) -> dict:
-    """info/md/<name> 원문 반환(소량/권위 문서)."""
-    path = os.path.join(INFO, "md", os.path.basename(name))
-    if not os.path.exists(path):
-        return {"error": f"없음: info/md/{name}"}
-    return {"name": os.path.basename(name), "content": open(path, encoding="utf-8").read()}
+    """info/md/<name> 원문 반환(소량/권위 문서). 로컬에 없으면 공유 노드에서 폴백."""
+    base = os.path.basename(name)
+    for ndir in _search_dirs():
+        path = os.path.join(ndir, "info", "md", base)
+        if os.path.exists(path):
+            return {"name": base, "content": open(path, encoding="utf-8").read(),
+                    "origin": _origin_of(ndir)}
+    return {"error": f"없음: info/md/{name} (이 노드/공유 노드 모두)"}
 
 
 @mcp.tool()

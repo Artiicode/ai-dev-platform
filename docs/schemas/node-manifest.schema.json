@@ -12,7 +12,9 @@
         "name": { "type": "string" },
         "schema_version": { "type": "integer", "minimum": 1 },
         "harness_min_version": { "type": "string" },
-        "private": { "type": "boolean", "description": "기밀 노드: archives/info/data 미추적 + validate가 데이터 추적 차단" }
+        "private": { "type": "boolean", "description": "기밀 노드: archives/info/data 미추적 + validate가 데이터 추적 차단" },
+        "shares": { "type": "array", "items": { "type": "string" },
+                    "description": "읽기전용으로 참조할 공유 지식 노드 이름들(예: [_shared]). 검색/읽기가 own+shared 로 페더레이션됨." }
       }
     },
     "link": {

@@ -60,7 +60,8 @@ def _autosave(node, reason):
 def cmd_init(a):
     import init_project
     return init_project.init(a.name, a.link_type, a.url, a.ref, a.force,
-                            getattr(a, "target", None), getattr(a, "private", False))
+                            getattr(a, "target", None), getattr(a, "private", False),
+                            getattr(a, "shares", None))
 
 
 def cmd_save(a):
@@ -374,10 +375,13 @@ def cmd_info(a):
 def cmd_search(a):
     res = _server_for(a.node).search_all(a.query, a.k)
     for h in res.get("hits", []):
-        print("[%-4s] %-24s dist=%.3f  %s"
-              % (h.get("kind", "?"), h["doc_id"], h["distance"], h["text"][:70].replace("\n", " ").strip()))
+        org = h.get("origin", "self")
+        tag = h.get("kind", "?") if org == "self" else "%s@%s" % (h.get("kind", "?"), org)
+        print("[%-12s] %-24s dist=%.3f  %s"
+              % (tag, h["doc_id"], h["distance"], h["text"][:70].replace("\n", " ").strip()))
     for m in res.get("sql_matches", []):
-        print("[sql ] %s.%s (%s) — query 로 정확값 조회" % (m["db"], m["table"], ",".join(m["columns"])))
+        org = "" if m.get("origin", "self") == "self" else " @%s" % m["origin"]
+        print("[sql ] %s.%s (%s)%s — query 로 정확값 조회" % (m["db"], m["table"], ",".join(m["columns"]), org))
     if not res.get("hits") and not res.get("sql_matches"):
         print("(결과 없음)")
     return 0
@@ -468,6 +472,7 @@ def build_parser():
     p.add_argument("--url"); p.add_argument("--ref"); p.add_argument("--force", action="store_true")
     p.add_argument("--target", help="link-type=symlink 의 대상 디렉토리(절대경로 권장)")
     p.add_argument("--private", action="store_true", help="기밀 노드: 데이터/산출물 미추적")
+    p.add_argument("--shares", default=None, help="공유 지식 노드(쉼표구분, 예: _shared) — 읽기 페더레이션")
     p.set_defaults(fn=cmd_init)
 
     p = sub.add_parser("gen-rules"); p.add_argument("--node", default=None)

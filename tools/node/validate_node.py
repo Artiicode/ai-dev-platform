@@ -22,6 +22,7 @@ import glob, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SCHEMA_DIR = os.path.join(ROOT, "docs", "schemas")
+sys.path.insert(0, os.path.join(ROOT, "tools", "lib"))   # shared_nodes
 
 REQUIRED_DIRS = ["data/update", "info", "archives", "code", "scenario", "history", "hw"]
 REQUIRED_FILES = ["manifest.yaml", "history/ONBOARDING.md"]
@@ -155,6 +156,21 @@ def validate_node(node_dir, strict=False):
         else:
             warnings.append("노드 git 미초기화 — `harness bootstrap %s` 또는 ingest/onboard 시 자동 생성됨"
                             % name)
+    except Exception:
+        pass
+
+    # 8b. shared-knowledge nodes (manifest node.shares) must resolve to existing nodes.
+    try:
+        import shared_nodes
+        declared = shared_nodes.declared(node_dir)
+        if declared:
+            resolved = {os.path.basename(d) for d in shared_nodes.resolve(node_dir)}
+            for nm in declared:
+                base = nm if nm.endswith("-node") else "%s-node" % nm
+                if os.path.isabs(nm):
+                    base = os.path.basename(nm.rstrip("/"))
+                if base not in resolved:
+                    warnings.append("shares 대상 노드 없음: %s (생성 전이면 정상; 검색 페더레이션 제외됨)" % nm)
     except Exception:
         pass
 

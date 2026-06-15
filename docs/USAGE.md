@@ -101,6 +101,14 @@ cp ~/specs/*.pdf  ~/data/*.json  projects/my_proj-node/data/update/
 
 라우팅 규칙: 정형(.json/.csv/.tsv)→SQL, 문서는 추출 후 길면 벡터·짧으면 md, 이미지는 `info/assets/` 보존 +
 위키 카드(`![](../assets/..)`)로 항상 적재(무-OCR도 skip 안 됨).
+
+> **공유 지식 노드(프로젝트 간 공통 데이터):** 여러 프로젝트가 같은 자료(코딩 컨벤션·HW 데이터시트·공통
+> 레퍼런스)를 쓸 때 매 노드에 복붙하지 않는다. 전용 **공유 노드**(예: `./harness init _shared`)에 **한 번만**
+> ingest 하고, 쓰는 프로젝트는 manifest `node.shares: [_shared]`(또는 `harness init <name> --shares _shared`)로
+> 선언한다. 그러면 그 프로젝트의 검색/읽기(`harness search`·MCP `search_info`/`search_all`/`read_md`/`query_sql`)가
+> **자기 `info/` + 공유 노드 `info/`** 를 합쳐 질의하고 결과에 출처 노드를 태깅한다(`@_shared-node`). 공유는
+> **단방향·읽기전용**: 공유 노드는 프로젝트를 보지 않고, 공유 자료 수정은 `_shared` 노드에서 직접 한다.
+> 공유 노드도 자체 node-git 을 가지므로 버전관리·자체 origin push 가 가능하다. 기밀 자료는 공유 노드에 두지 않는다.
 출처는 `projects/my_proj-node/info/index.yaml`(provenance).
 
 ## 4. AI가 데이터를 쓰게 하기 — MCP 서버 등록
