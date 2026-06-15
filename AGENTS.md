@@ -42,6 +42,8 @@
 - `repo/` 안에는 AI 파일(프롬프트/컨텍스트/이력/info)을 **절대** 두지 않는다 — 전부 `-node/` 레벨에.
 - 데이터는 `data/update/`에 투입 → `harness ingest <node>`로 `info/`(md/SQL/vector)로 변환.
   원본은 `archives/`, 출처·해시는 `info/index.yaml`.
+- 이미지는 `info/assets/`에 보존되고 위키 본문이 `![](../assets/<name>)`로 참조한다. **시각 확인이 필요하면
+  그 asset 경로를 `Read`(멀티모달)로 직접 열람**한다(자동 캡션 없음).
 - 변환기는 `tools/data-to-info/`에 두고 `tools/README.md` 규칙을 따른다.
 
 ## 3. 작업 진입 절차

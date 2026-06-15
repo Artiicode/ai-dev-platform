@@ -2,6 +2,16 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.29.0] - 2026-06-15
+### Added
+- **이미지 자산(asset) 관리 — Karpathy "LLM Wiki" 방식.** 이미지 인제스트가 OCR 텍스트만 뽑고 원본을
+  버리던(무-OCR 도면/사진은 skip) 손실을 해소. 이제 이미지는 ① 원본을 `info/assets/`에 보존 → ② 위키
+  페이지가 `![](../assets/<name>)`로 참조 → ③ 에이전트가 필요할 때 그 경로를 `Read`(멀티모달)로 **on-demand
+  열람**(비전 캡셔닝/멀티모달 임베딩 없음 — 오프라인·무비용). **무-OCR 이미지도 더 이상 skip되지 않고**
+  파일명·제목으로 임베딩·검색된다. 변경은 `tools/data-to-info/router.py`(`_image_card` 헬퍼 + 이미지 분기)에
+  국한, 기존 wiki 흐름(`upsert`→`embed_page`→`reindex`→`provenance.record`→archive) 재사용. 신규 노드는
+  `info/assets/`(`.gitkeep`) 기본 포함. 임시 노드로 end-to-end 검증(글자 있는/없는 PNG, 검색, `Read`, 회귀).
+
 ## [0.28.1] - 2026-06-15
 ### Changed
 - `harness start` subtask 윈도우 일일 플랜 갱신 주기 10초 → **60초**.

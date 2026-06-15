@@ -95,6 +95,27 @@ def _write_md(node_dir, name, text=None, src=None):
     return os.path.relpath(dst, node_dir)
 
 
+def _image_card(node_dir, src, name, text, sha):
+    """Preserve the image as a local asset and return a deterministic wiki-card body that
+    references it with ![](../assets/..). Agents open the asset with Read on demand — no
+    vision captioning (offline, no cost). OCR text, when present, is appended below."""
+    assets_dir = os.path.join(node_dir, "info", "assets")
+    os.makedirs(assets_dir, exist_ok=True)                 # on-demand, like info/db
+    asset_name = name
+    dst = os.path.join(assets_dir, asset_name)
+    if os.path.exists(dst) and provenance.sha256_of(dst) != sha:
+        asset_name = "%s_%s" % (sha[:8], name)             # name clash, different bytes → unique
+        dst = os.path.join(assets_dir, asset_name)
+    shutil.copyfile(src, dst)                              # working copy; original still → archives/
+    title = _title_for(name, text)
+    lines = ["원본 파일: %s" % name, "",
+             "![%s](../assets/%s)" % (title, asset_name), "",
+             "> 이 이미지를 시각적으로 확인하려면 위 asset 경로를 Read 하라."]
+    if text.strip():
+        lines += ["", "## OCR 추출 텍스트", "", text.strip()]
+    return "\n".join(lines) + "\n"
+
+
 def _ingest_vector(node_dir, doc_id, source_rel, text, embedder):
     import vectorstore
     chunks = vectorstore.chunk_text(text)
@@ -160,15 +181,23 @@ def _process(node_dir, files, archive_dir, md_max, vector_min, dry_run):
         text = None
         if ext in extractor.PLAIN:
             text = open(src, encoding="utf-8", errors="replace").read()
+        elif ext in extractor.IMAGE:
+            # Images are never skipped: best-effort OCR, but preserve the asset + a wiki card
+            # even with no recognizable text (drawings/photos, or no OCR engine installed).
+            text, _ = extractor.extract(src)
+            text = text or ""
         elif ext not in STRUCTURED and extractor.is_supported(src):
             text, note = extractor.extract(src)
             if text is None:
                 print("[router] %-28s [skip] 추출 불가: %s (inbox 유지)" % (name, note)); continue
 
-        route, why = routing.decide(src, text, size, md_max, vector_min)
-        # route 가 sql 인데 정형 파일이 아니면 wiki(md)로 강등
-        if route == "sql" and ext not in STRUCTURED:
-            route, why = "wiki", why + "→wiki(비정형)"
+        if ext in extractor.IMAGE:
+            route, why = "wiki", "image"          # always a referenceable wiki card (skip classifier)
+        else:
+            route, why = routing.decide(src, text, size, md_max, vector_min)
+            # route 가 sql 인데 정형 파일이 아니면 wiki(md)로 강등
+            if route == "sql" and ext not in STRUCTURED:
+                route, why = "wiki", why + "→wiki(비정형)"
         print("[router] %-28s -> %s (%s)" % (name, route, why))
         if dry_run:
             continue
@@ -185,7 +214,8 @@ def _process(node_dir, files, archive_dir, md_max, vector_min, dry_run):
             if text is None:
                 text = open(src, encoding="utf-8", errors="replace").read()
             sha = provenance.sha256_of(src)
-            res_w = wiki.upsert(node_dir, title=_title_for(name, text), body=text,
+            body = _image_card(node_dir, src, name, text, sha) if ext in extractor.IMAGE else text
+            res_w = wiki.upsert(node_dir, title=_title_for(name, text), body=body,
                                 sources=[{"id": name, "sha256": sha}])
             if embedder is None: embedder = _load_embedder()
             nch = wiki.embed_page(node_dir, res_w["slug"], embedder)

@@ -26,7 +26,10 @@ cp -n .env.example .env        # 사용할 모델 키 채우기(models.yaml 참�
 - **임베딩 모델:** 기본 `BAAI/bge-m3`(MIT, hybrid, 다국어·한국어 retrieval 우수, ~2GB).
   대안 `Qwen/Qwen3-Embedding-0.6B`(instruction-tuned, ~1.2GB; `HARNESS_EMBED_MODEL`로 교체). 최초 1회 다운로드. 받기 전이거나
   오프라인이면 `export HARNESS_EMBED_BACKEND=hash`로 결정적 폴백을 쓸 수 있습니다(검색 품질↓, 배관은 동일).
-- **OCR:** 이미지 인제스트는 `tesseract` 바이너리 필요. 없으면 이미지 파일만 건너뜁니다.
+- **이미지 자산(asset):** 이미지는 OCR 텍스트를 뽑되, **원본을 `info/assets/`에 보존**하고 위키 페이지가
+  `![](../assets/<name>)`로 참조한다. 시각 확인이 필요하면 에이전트가 그 asset 경로를 **`Read`로 on-demand
+  열람**한다(비전 캡셔닝/멀티모달 임베딩 없음 — 오프라인·무비용). **OCR 글자가 없는 도면/사진도 더 이상
+  건너뛰지 않는다**(파일명·제목으로 임베딩·검색됨). OCR 텍스트 추출은 `tesseract` 바이너리가 있을 때만 추가된다.
 
 ## 2. CLI (`./harness`)
 
@@ -89,7 +92,8 @@ cp ~/specs/*.pdf  ~/data/*.json  projects/my_proj-node/data/update/
 ./harness info   my_proj
 ```
 
-라우팅 규칙: 정형(.json/.csv/.tsv)→SQL, 문서는 추출 후 길면 벡터·짧으면 md, 이미지는 OCR.
+라우팅 규칙: 정형(.json/.csv/.tsv)→SQL, 문서는 추출 후 길면 벡터·짧으면 md, 이미지는 `info/assets/` 보존 +
+위키 카드(`![](../assets/..)`)로 항상 적재(무-OCR도 skip 안 됨).
 출처는 `projects/my_proj-node/info/index.yaml`(provenance).
 
 ## 4. AI가 데이터를 쓰게 하기 — MCP 서버 등록
@@ -188,7 +192,8 @@ Windows에서 브라우저로 대화하는 GUI는 **동일 MCP 서버를 재사�
 - **`disk I/O error` (sqlite):** 가상/네트워크 마운트(예: Windows 드라이브를 `/mnt/c`로 마운트)에서
   발생할 수 있습니다. 노드를 WSL **네이티브 파일시스템**(예: `~/ai-harness`)에 두세요. `/mnt/c/...`는 피함.
 - **bge-m3 다운로드 지연/실패:** 임시로 `HARNESS_EMBED_BACKEND=hash`. 캐시는 `~/.cache/huggingface`.
-- **이미지가 인제스트 안 됨:** `tesseract` 미설치 → `sudo apt-get install tesseract-ocr`.
+- **이미지 OCR 텍스트가 안 뽑힘:** `tesseract` 미설치 → `sudo apt-get install tesseract-ocr`. (이미지 자체는
+  미설치여도 `info/assets/`에 보존되고 위키 카드로 적재됨 — OCR 텍스트만 빠짐.)
 - **검증:** `make test` (오프라인 hash 임베더로 전체 파이프라인 스모크).
 
 ## 9. 받아서 쓰기 · 자동 준비 · 업데이트 (소비자 워크플로)

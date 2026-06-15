@@ -124,6 +124,8 @@ projects/<project>-node/
 │   ├── md/                #   소량/권위 문서 (git-diff 가능)
 │   ├── db/                #   정형 데이터 (SQLite/DuckDB)  예: 로봇암 x,y,z
 │   ├── vector/            #   대량 비정형 텍스트 임베딩 (RAG)
+│   ├── wiki/              #   엔티티 위키 페이지([[링크]]·INDEX). 이미지는 ![](../assets/..) 카드
+│   ├── assets/            #   이미지 원본 보존(위키 카드가 참조, 에이전트가 Read로 on-demand 열람)
 │   └── index.yaml         #   ★ 라우팅 결정 + provenance 인덱스 (§6)
 ├── archives/              # ★ 진실 원본. 인제스트에 쓰인 파일 원본 보관
 ├── context/               # 이 프로젝트에 주입할 큐레이션 컨텍스트
@@ -231,6 +233,7 @@ data/update/<아무 확장자>  ──/update──▶  tools/data-to-info/route
 | 대량 비정형 텍스트(매뉴얼, 논문 묶음) | **벡터 RAG** (`info/vector/`) | 시맨틱 검색, 컨텍스트 절약 |
 | 정형 수치/표(로봇암 x,y,z, 센서 로그, BOM) | **SQL** (`info/db/`, SQLite/DuckDB) | 정확한 질의/집계, 스키마 보장 |
 | 코드/설정 | repo와 별개로 요약 md + 심볼 인덱스 | 코드 자체는 repo에 있음 |
+| 이미지(도면, 사진, 스크린샷) | **위키 카드**(`info/wiki/`) + **원본 보존**(`info/assets/`) | OCR 텍스트 + `![](../assets/..)` 참조. 에이전트가 `Read`로 on-demand 시각 열람(비전 캡셔닝 없음). 무-OCR도 skip 안 됨 |
 
 임계값(`md_max_chars` 등)은 manifest로 오버라이드. 충돌 정보는 **조용히 덮어쓰지 않고** `index.yaml`에
 supersedes 관계로 버전을 남긴다.
