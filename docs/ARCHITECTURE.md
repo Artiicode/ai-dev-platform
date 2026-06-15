@@ -135,10 +135,11 @@ projects/<project>-node/
 ├── scenario/              # ★ 유저가 관리하는 운영 플레이북
 │   ├── debug.md           #   디버그 절차 (빌드→ssh→scp→실행→로그→커밋, §7)
 │   └── test/              #   테스트 시나리오 / 유저 시나리오
-├── code/                  # ★ 유저가 관리하는 코딩 규약
-│   ├── coding_convention/ #   AI가 plan/verify/implement 시 읽음
+├── conventions/           # ★ 유저가 관리하는 코딩 규약(코드가 아니라 코드에 대한 규칙)
+│   ├── coding/            #   AI가 plan/verify/implement 시 읽음
 │   ├── lint/              #   lint 설정·규칙
-│   └── static_analysis/   #   정적분석 규칙
+│   ├── static_analysis/   #   정적분석 규칙
+│   └── verify.yaml        #   harness verify 체크 정의
 ├── hw/                    # 하드웨어 정보 (예 jetson_agx_orin) — ★ 시크릿 참조만, 평문 금지
 ├── sw/                    # 소프트웨어 환경 정보
 ├── history/               # ★ 에이전트 연속성: 신규 에이전트가 과거를 이해
@@ -260,7 +261,7 @@ git 친화·이식성·오프라인.)
 진실 원본이고, AI는 이를 읽어 수행한다. 단계:
 
 ```
-규약 로드(code/coding_convention) → 코딩 → 빌드
+규약 로드(conventions/coding) → 코딩 → 빌드
   → HW/SW 정보 로드(hw/<target>.md: 호스트·계정·경로, 시크릿은 참조名만)
   → 시크릿 해석(ssh-agent/vault/env) → ssh 접근
   → scp로 산출물 → 타겟:/root (경로는 시나리오 변수)

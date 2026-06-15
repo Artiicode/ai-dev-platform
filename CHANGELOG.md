@@ -2,6 +2,22 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.33.0] - 2026-06-15
+### Added
+- **위키 스택 advisor** — `harness wiki <node> --advise`(MCP `wiki_graph` op=advise). 페이지 수·링크밀도·
+  type 다양성·고아비율 신호로 "벡터+facet 현행 유지 / GraphRAG·그래프DB·온톨로지 고려"를 **권고만** 한다
+  (자동 전환 안 함, 채택은 사람 결정). 임계 도달 시 `--export` 의 (nodes,edges)를 kuzu/GraphRAG 어댑터에
+  태우는 on-ramp(ADR 0017). `tools/lib/wiki_graph.py` 에 `advise()` 휴리스틱 임계 추가.
+### Changed
+- **노드 `code/` → `conventions/` 리네임**(+ `coding_convention/` → `coding/`). `code/` 가 코드가 아니라
+  "코드에 대한 규칙(컨벤션/lint/static)"을 담아 `repo/` 와 혼동되던 문제 해소. 템플릿 디렉토리, `validate_node`
+  (REQUIRED_DIRS·REPO_FORBIDDEN), `verify.py`, `gen_onboarding`, `global-system.md`, 생성기, 문서 전부 갱신.
+  (`archives` 는 역할상 적절해 유지 — `ssot` 는 분산된 SSOT 를 과대주장하므로 미채택.)
+### Fixed
+- **AGENTS.md 정본 드리프트** — AGENTS.md 는 `gen_agent_rules._platform_body()` 에서 자동 생성되는데,
+  최근 기능(이미지 asset·노드 git·공유 노드·위키 v2)의 플레이북/규칙이 AGENTS.md 에 **직접 편집**돼 있어
+  `gen-rules` 재생성 시 소실될 상태였다. 해당 내용을 생성기 정본으로 이관해 재생성에도 보존되도록 수정.
+
 ## [0.32.0] - 2026-06-15
 ### Added
 - **위키 v2 — 분류(type) facet + `[[링크]]` 그래프 + 외부 항목 import(ADR 0017).** 평면 위키에 다음을 추가:

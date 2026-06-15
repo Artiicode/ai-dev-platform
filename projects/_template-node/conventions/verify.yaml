@@ -1,7 +1,7 @@
 # 검증 체크 정의. cmd 는 repo/ 에서 실행(cwd: node 면 노드 루트). required=false 면 실패해도 통과.
 # 실제 프로젝트에 맞게 lint/types/unit/scenario 를 채우세요.
 checks:
-  - { name: placeholder, cmd: "python3 -c \"print('verify: define real checks in code/verify.yaml')\"", required: true }
+  - { name: placeholder, cmd: "python3 -c \"print('verify: define real checks in conventions/verify.yaml')\"", required: true }
   # - { name: lint,  cmd: "ruff check .",  required: true }
   # - { name: types, cmd: "mypy .",        required: false }
   # - { name: unit,  cmd: "pytest -q",     required: true }

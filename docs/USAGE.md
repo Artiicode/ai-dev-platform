@@ -48,7 +48,7 @@ cp -n .env.example .env        # 사용할 모델 키 채우기(models.yaml 참�
 ./harness lock|unlock <name> [--ticket T] [--status]
 ./harness worktree  <name> --ticket T [--branch B] [--dry-run]
 ./harness rebuild   <name>                        # archives 에서 info/ 완전 재생성
-./harness verify    <name>                        # code/verify.yaml 체크 실행
+./harness verify    <name>                        # conventions/verify.yaml 체크 실행
 ./harness webgui    <name> [--port 8800]          # 브라우저 GUI (RAG/SQL/chat)
 # 강제성(어떤 AI 에이전트든 규칙 준수):
 ./harness gen-rules [--node NAME]                 # 정본 AGENTS.md(+활성 하네스 진입파일 심링크) 생성
@@ -110,6 +110,9 @@ cp ~/specs/*.pdf  ~/data/*.json  projects/my_proj-node/data/update/
 > - **검색 facet 한정:** `harness search <node> "<질의>" --type risk` (MCP `search_info`/`search_all` 의 `type`).
 > - **그래프 질의(neo4j 불요):** `harness wiki <node> --graph|--neighbors <slug>|--path A:B|--orphans|--export`
 >   (MCP `wiki_graph`). 요구사항↔리스크↔티켓 같은 추적성을 `[[링크]]` 그래프로 따라간다.
+> - **스택 확장 advisor:** `harness wiki <node> --advise` — 규모·링크밀도·type 다양성·고아비율 신호로
+>   "벡터+facet 현행 유지 / GraphRAG·그래프DB·온톨로지 고려(이유)"를 권고. **채택은 사람이 결정**(자동
+>   전환 안 함). 임계 도달 시 `--export` 의 (nodes,edges)를 kuzu/GraphRAG 어댑터에 태우면 됨(코어 불변).
 > - **외부 항목(티켓/PR) import:** `harness import <node> <items.json|.tsv> --type ticket`. 실제 fetch 는
 >   소스별 도구(Jira MCP·`gh`)가 JSON/TSV 로 떨궈주고, importer 가 key/status/url 프론트매터 위키 페이지로
 >   변환·임베딩한다(플랫폼 코어는 소스 비종속).
@@ -213,7 +216,7 @@ Windows에서 브라우저로 대화하는 GUI는 **동일 MCP 서버를 재사�
   비대화 자동화는 `HARNESS_AUTO_APPROVE=1` 로 명시 승인. 모든 승인은 `state/audit.log` 에 감사 기록.
   HW 접속 정보는 `hw/<target>.md`(시크릿은 이름 참조만).
 - **재생성:** `harness rebuild <name>` — info/ 를 비우고 archives/(진실 원본)에서 완전 재구축(스키마 변경 시 유용).
-- **검증 루프:** `harness verify <name>` — `code/verify.yaml` 의 lint/types/unit/scenario 체크 실행, 필수 실패 시 비정상 종료. 리포트는 `state/verify-report.md`.
+- **검증 루프:** `harness verify <name>` — `conventions/verify.yaml` 의 lint/types/unit/scenario 체크 실행, 필수 실패 시 비정상 종료. 리포트는 `state/verify-report.md`.
 
 ## 8. 트러블슈팅
 - **`disk I/O error` (sqlite):** 가상/네트워크 마운트(예: Windows 드라이브를 `/mnt/c`로 마운트)에서

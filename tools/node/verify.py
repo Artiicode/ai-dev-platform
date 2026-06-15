@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """verify — 코딩 규약/테스트 시나리오 기반 검증 루프(Plan→...→Verify 의 Verify).
 
-node/code/verify.yaml 의 checks 를 repo/ (또는 지정 cwd)에서 실행하고 pass/fail 집계.
+node/conventions/verify.yaml 의 checks 를 repo/ (또는 지정 cwd)에서 실행하고 pass/fail 집계.
 required 체크가 하나라도 실패하면 비정상 종료. 리포트는 state/verify-report.md 에 기록.
 
 verify.yaml 예:
@@ -20,7 +20,7 @@ import sys
 
 
 def _load_checks(node_dir):
-    p = os.path.join(node_dir, "code", "verify.yaml")
+    p = os.path.join(node_dir, "conventions", "verify.yaml")
     if not os.path.exists(p):
         return None
     try:
@@ -33,7 +33,7 @@ def _load_checks(node_dir):
 def run(node_dir):
     checks = _load_checks(node_dir)
     if checks is None:
-        print("[verify] code/verify.yaml 없음 — 검증 항목 미정의(스킵)"); return 0
+        print("[verify] conventions/verify.yaml 없음 — 검증 항목 미정의(스킵)"); return 0
     if not checks:
         print("[verify] 정의된 체크 없음"); return 0
     repo = os.path.join(node_dir, "repo")

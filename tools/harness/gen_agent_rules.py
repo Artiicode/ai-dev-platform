@@ -86,12 +86,20 @@ def _platform_body() -> str:
   플랫폼 루트(여기)나 현재 작업 디렉토리에 프로젝트 코드를 만들지 **않는다**. 노드가 없으면 먼저
   `./harness init <name>` 으로 만든 뒤 그 `repo/` 안에서 작업한다. (제로베이스 신규 프로젝트도 동일.)
 - `repo/` 안에는 AI 파일(프롬프트/컨텍스트/이력/info)을 **절대** 두지 않는다 — 전부 `-node/` 레벨에.
+- **노드 메타는 노드 자신의 git 으로 관리된다(자동).** `projects/<name>-node/`는 `init`/`bootstrap` 시
+  자체 `.git`이 생기고, `ingest`/`onboard`/`verify` 및 MCP 쓰기(worklog/ADR/wiki/standup)가 **자동 커밋**한다.
+  컨텍스트/시나리오 파일을 직접 편집했으면 `./harness save <node> -m "..."` 로 커밋한다.
+  플랫폼 repo 는 `/projects/*` 를 무시하므로 이 노드 git 은 플랫폼 이력과 **완전 분리**된다(submodule 아님).
+- **`repo/`(프로젝트 코드)는 외부에서 관리되는 객체다.** 노드 git 은 `/repo` 를 추적하지 않는다.
+  코드 자체의 버전관리는 그 repo 의 자체 git(별도 origin)에서 한다 — 노드 git 으로 커밋하지 말 것.
 - 데이터는 `data/update/`에 투입 → `harness ingest <node>`로 `info/`(md/SQL/vector)로 변환.
   원본은 `archives/`, 출처·해시는 `info/index.yaml`.
+- 이미지는 `info/assets/`에 보존되고 위키 본문이 `![](../assets/<name>)`로 참조한다. **시각 확인이 필요하면
+  그 asset 경로를 `Read`(멀티모달)로 직접 열람**한다(자동 캡션 없음).
 - 변환기는 `tools/data-to-info/`에 두고 `tools/README.md` 규칙을 따른다.
 
 ## 3. 작업 진입 절차
-1) 노드 `history/ONBOARDING.md` 읽기 → 2) `code/coding_convention/` 읽기 →
+1) 노드 `history/ONBOARDING.md` 읽기 → 2) `conventions/coding/` 읽기 →
 3) plan → verify → implement → 4) 경과를 `history/worklog/<티켓>.md`에 기록 →
 5) 위험행동(ssh/scp/push/deploy/삭제)은 `platform/policies/approval-gates.md` 게이트 통과.
 
@@ -116,8 +124,12 @@ def _platform_body() -> str:
 | "cursor/gemini/copilot 쓸게" | `./harness use <harness>` (진입규칙·스킬 로컬 생성) |
 | "bitbucket/jira/figma MCP 붙여줘" | `platform/mcp-servers.yaml` 의 `enabled` 에 해당 서버 추가(없으면 `servers:` 에 정의; **레지스트리엔 `${{ENV_VAR}}` 참조만**) → `./harness mcp <harness> --node <node>` → **자격증명은 `.env`(gitignored)에 넣게 안내**(자동 주입, export 아님) |
 | "이 데이터 넣어줘/인제스트" | 파일을 `projects/<node>-node/data/update/` 에 두고 `./harness ingest <node>` (원본→archives, 출처→info/index.yaml) |
-| "검색/찾아줘" (의미 검색) | MCP `search_info`/`search_all` 또는 `./harness search <node> "<질의>"` |
-| "테스트/검증 돌려줘" | `./harness verify <node>` (결과는 자동으로 ONBOARDING 에 반영) |
+| "여러 프로젝트가 공통으로 쓸 자료야 / 공통 컨벤션·레퍼런스" | 공유 노드에 **한 번만** 적재: `./harness init _shared`(없으면) → `_shared` 의 `data/update/` 에 두고 `./harness ingest _shared`. 그 자료를 쓸 프로젝트는 manifest `node.shares: [_shared]`(또는 `init --shares _shared`) — 검색/읽기가 own+shared 로 페더레이션된다. 매 노드에 복붙하지 말 것 |
+| "검색/찾아줘" (의미 검색) | MCP `search_info`/`search_all` 또는 `./harness search <node> "<질의>"` (특정 분류만: `--type risk`) |
+| "위키 정리/추적성/관계 보고싶어" | 위키는 평면 슬러그 + `type` facet + `[[링크]]` 그래프. 문서맵 `./harness wiki <node> --reindex`(type별 INDEX), 그래프 `--graph/--neighbors/--path/--orphans`(MCP `wiki_graph`). 페이지 작성 시 `wiki_upsert(type=...)` 로 분류. 스택 확장 판단은 `--advise` |
+| "Jira 티켓/PR 목록 위키에 넣어줘" | 소스 도구(Jira MCP·`gh`)로 JSON/TSV 추출 → `./harness import <node> <file> --type ticket`(key/status/url 프론트매터 위키 페이지로 변환·임베딩) |
+| "테스트/검증 돌려줘" | `./harness verify <node>` (결과는 자동으로 ONBOARDING 에 반영 + 노드 git 자동 커밋) |
+| "노드 변경분 저장/커밋해줘" | `./harness save <node> -m "<요약>"` (노드 메타 git 커밋; `/repo` 는 외부 관리라 제외). ingest/onboard/verify·MCP 쓰기는 자동 커밋되므로 보통 직접 편집분만 |
 | "오늘 할 일 추가 / 스탠드업" | 할일 `./harness standup --add-task "<할 일>"`(또는 `/add-task`) · 진행 `--add "<항목>"` · 요약 `--today/--tomorrow` · 보기 `--show`. **노드 생략=플랫폼 개인 일일 플랜**(`harness start` 의 subtask 창), `<node>` 지정=프로젝트 standup. 전날 미완료(`- [ ]`)·내일계획은 오늘로 자동 carry-over, 비면 "없음" |
 | "사용량/토큰 비용 보여줘 (usage)" | `./harness tool ai-usage-monitor -- --watch` (번들 도구; `toolkit/` 참고) |
 | "작업 세션/tmux 띄워줘" | `./harness start [세션이름]` (window `dev`: 좌 claude/우상 치트시트+셸/우하 usage + window `subtask`: 오늘 플랜; 하네스·claude 권한을 화살표 메뉴로 골라 `.harness-local.json` 에 저장. claude 는 harness 실행 디렉토리에서 실행, `--cwd` 로 변경) |
@@ -138,7 +150,7 @@ AI 파일(프롬프트/컨텍스트/이력/info)을 두지 않는다.
 
 ## 진입 순서 (반드시)
 1. `history/ONBOARDING.md` — 현재 상태/활성 티켓/최근 결정/알려진 이슈.
-2. `code/coding_convention/`, `code/lint/`, `code/static_analysis/` — 코드 규칙.
+2. `conventions/coding/`, `conventions/lint/`, `conventions/static_analysis/` — 코드 규칙.
 3. `scenario/debug.md`, `scenario/test/` — 디버그/테스트 플레이북.
 4. `info/`(md/db/vector) + `info/index.yaml` — 사실/데이터와 출처.
 

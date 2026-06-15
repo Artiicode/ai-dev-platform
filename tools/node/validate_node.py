@@ -24,11 +24,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 SCHEMA_DIR = os.path.join(ROOT, "docs", "schemas")
 sys.path.insert(0, os.path.join(ROOT, "tools", "lib"))   # shared_nodes
 
-REQUIRED_DIRS = ["data/update", "info", "archives", "code", "scenario", "history", "hw"]
+REQUIRED_DIRS = ["data/update", "info", "archives", "conventions", "scenario", "history", "hw"]
 REQUIRED_FILES = ["manifest.yaml", "history/ONBOARDING.md"]
 # repo/ 안에 있으면 안 되는 AI 메타 흔적 (배치 규칙 위반)
 REPO_FORBIDDEN = ["manifest.yaml", "history", "scenario", "info/index.yaml",
-                  "code/coding_convention", "ONBOARDING.md"]
+                  "conventions/coding", "ONBOARDING.md"]
 # 평문 시크릿 패턴
 SECRET_PATTERNS = [
     (re.compile(r"-----BEGIN (?:RSA |OPENSSH |EC |DSA )?PRIVATE KEY-----"), "개인키"),

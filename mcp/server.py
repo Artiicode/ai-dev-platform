@@ -440,7 +440,8 @@ def wiki_links() -> dict:
 
 @mcp.tool()
 def wiki_graph(op: str = "summary", slug: str | None = None, target: str | None = None) -> dict:
-    """[[link]] 그래프 질의(neo4j 불요). op: summary | neighbors(slug) | path(slug→target) | orphans."""
+    """[[link]] 그래프 질의(neo4j 불요). op: summary | neighbors(slug) | path(slug→target) | orphans | advise.
+    advise: 규모·관계도 신호로 GraphRAG/온톨로지 확장 필요성을 권고(채택은 사람이 결정)."""
     import wiki_graph as wg
     if op == "neighbors":
         return wg.neighbors(NODE_DIR, slug) if slug else {"error": "slug 필요"}
@@ -450,6 +451,8 @@ def wiki_graph(op: str = "summary", slug: str | None = None, target: str | None 
         return {"path": wg.path(NODE_DIR, slug, target)}
     if op == "orphans":
         return {"orphans": wg.orphans(NODE_DIR)}
+    if op == "advise":
+        return wg.advise(NODE_DIR)
     return wg.summary(NODE_DIR)
 
 

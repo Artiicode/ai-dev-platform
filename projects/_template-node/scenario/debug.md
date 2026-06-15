@@ -9,7 +9,7 @@ target_default: jetson_agx_orin
 AI는 이 절차를 읽어 수행한다. 위험 단계는 platform/policies/approval-gates.md 게이트를 통과.
 
 ## 절차
-1. **규약 로드**: `code/coding_convention/` 읽기.
+1. **규약 로드**: `conventions/coding/` 읽기.
 2. **코딩** → **빌드**. 빌드 산출물 경로를 기록.
 3. **타겟 정보 로드**: `hw/<target>.md` (host/user/port/배포경로). 시크릿은 *이름만*.
 4. **시크릿 해석**: ssh-agent / vault / env 에서 이름→값 (승인 게이트 + 감사 로그).

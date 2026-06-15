@@ -21,4 +21,4 @@ generated: true
 ## 시작 절차
 1. platform/prompts/global-system.md 규칙 숙지.
 2. 작업 티켓의 history/worklog/<티켓>.md 확인.
-3. 코딩은 code/coding_convention/, 디버그는 scenario/debug.md.
+3. 코딩은 conventions/coding/, 디버그는 scenario/debug.md.

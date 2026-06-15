@@ -163,7 +163,7 @@ def generate(node_dir):
     L.append("## 시작 절차")
     L.append("1. `platform/prompts/global-system.md` 규칙 숙지.")
     L.append("2. 활성 티켓의 `history/worklog/<티켓>.md` 확인.")
-    L.append("3. 코딩은 `code/coding_convention/`, 디버그는 `scenario/debug.md`.")
+    L.append("3. 코딩은 `conventions/coding/`, 디버그는 `scenario/debug.md`.")
     L.append("4. 사실/데이터는 MCP `search_info`/`query_sql` 또는 `info/`.\n")
 
     out = os.path.join(node_dir, "history", "ONBOARDING.md")

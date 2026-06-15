@@ -29,7 +29,7 @@
 
 ## 1. 공통 규칙 (필수)
 1. 작업 시작 전 대상 프로젝트의 `history/ONBOARDING.md`를 읽는다.
-2. 코드 작성은 `code/coding_convention/`을 먼저 읽고 plan → verify → implement.
+2. 코드 작성은 `conventions/coding/`을 먼저 읽고 plan → verify → implement.
 3. 위험 행동은 `platform/policies/approval-gates.md`의 게이트를 통과한다.
 4. 사실/데이터는 `info/`에서 가져오고, 출처는 `info/index.yaml`로 확인·인용한다.
 5. 비자명한 결정은 `history/adr/`에, 진행 경과는 `history/worklog/<티켓>.md`에 기록한다.
@@ -53,7 +53,7 @@
 - 변환기는 `tools/data-to-info/`에 두고 `tools/README.md` 규칙을 따른다.
 
 ## 3. 작업 진입 절차
-1) 노드 `history/ONBOARDING.md` 읽기 → 2) `code/coding_convention/` 읽기 →
+1) 노드 `history/ONBOARDING.md` 읽기 → 2) `conventions/coding/` 읽기 →
 3) plan → verify → implement → 4) 경과를 `history/worklog/<티켓>.md`에 기록 →
 5) 위험행동(ssh/scp/push/deploy/삭제)은 `platform/policies/approval-gates.md` 게이트 통과.
 
@@ -80,7 +80,7 @@
 | "이 데이터 넣어줘/인제스트" | 파일을 `projects/<node>-node/data/update/` 에 두고 `./harness ingest <node>` (원본→archives, 출처→info/index.yaml) |
 | "여러 프로젝트가 공통으로 쓸 자료야 / 공통 컨벤션·레퍼런스" | 공유 노드에 **한 번만** 적재: `./harness init _shared`(없으면) → `_shared` 의 `data/update/` 에 두고 `./harness ingest _shared`. 그 자료를 쓸 프로젝트는 manifest `node.shares: [_shared]`(또는 `init --shares _shared`) — 검색/읽기가 own+shared 로 페더레이션된다. 매 노드에 복붙하지 말 것 |
 | "검색/찾아줘" (의미 검색) | MCP `search_info`/`search_all` 또는 `./harness search <node> "<질의>"` (특정 분류만: `--type risk`) |
-| "위키 정리/추적성/관계 보고싶어" | 위키는 평면 슬러그 + `type` facet + `[[링크]]` 그래프. 문서맵 `./harness wiki <node> --reindex`(type별 INDEX), 그래프 `--graph/--neighbors/--path/--orphans`(MCP `wiki_graph`). 페이지 작성 시 `wiki_upsert(type=...)` 로 분류 |
+| "위키 정리/추적성/관계 보고싶어" | 위키는 평면 슬러그 + `type` facet + `[[링크]]` 그래프. 문서맵 `./harness wiki <node> --reindex`(type별 INDEX), 그래프 `--graph/--neighbors/--path/--orphans`(MCP `wiki_graph`). 페이지 작성 시 `wiki_upsert(type=...)` 로 분류. 스택 확장 판단은 `--advise` |
 | "Jira 티켓/PR 목록 위키에 넣어줘" | 소스 도구(Jira MCP·`gh`)로 JSON/TSV 추출 → `./harness import <node> <file> --type ticket`(key/status/url 프론트매터 위키 페이지로 변환·임베딩) |
 | "테스트/검증 돌려줘" | `./harness verify <node>` (결과는 자동으로 ONBOARDING 에 반영 + 노드 git 자동 커밋) |
 | "노드 변경분 저장/커밋해줘" | `./harness save <node> -m "<요약>"` (노드 메타 git 커밋; `/repo` 는 외부 관리라 제외). ingest/onboard/verify·MCP 쓰기는 자동 커밋되므로 보통 직접 편집분만 |

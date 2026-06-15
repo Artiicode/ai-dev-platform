@@ -323,10 +323,12 @@ def cmd_wiki(a):
         rep = wiki.link_report(node)
         print("[wiki] dangling 링크: %s" % (rep["dangling"] or "없음"))
     # graph queries ([[link]] 그래프; neo4j 없이 stdlib)
-    graph_op = a.graph or a.neighbors or a.path or a.orphans or a.export
+    graph_op = a.graph or a.neighbors or a.path or a.orphans or a.export or a.advise
     if graph_op:
         import wiki_graph
-        if a.neighbors:
+        if a.advise:
+            print(json.dumps(wiki_graph.advise(node), ensure_ascii=False, indent=2))
+        elif a.neighbors:
             print(json.dumps(wiki_graph.neighbors(node, a.neighbors), ensure_ascii=False, indent=2))
         elif a.path:
             src, _, dst = a.path.partition(":")
@@ -574,6 +576,7 @@ def build_parser():
     p.add_argument("--path", default=None, metavar="SRC:DST", help="두 페이지 간 최단 [[링크]] 경로")
     p.add_argument("--orphans", action="store_true", help="고립 페이지(in/out 링크 없음)")
     p.add_argument("--export", action="store_true", help="그래프를 info/wiki/graph.json 으로 export")
+    p.add_argument("--advise", action="store_true", help="스택 확장(GraphRAG/온톨로지) 필요성 신호·권고")
     p.set_defaults(fn=cmd_wiki)
 
     p = sub.add_parser("wiki-compile"); p.add_argument("node")  # 키 있을 때 LLM 자동 병합(없으면 no-op)

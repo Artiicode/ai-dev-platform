@@ -92,3 +92,47 @@ def summary(node_dir):
     return {"pages": len(g["nodes"]), "links": len(g["edges"]),
             "types": types, "orphans": orphans(node_dir),
             "dangling": dangling(node_dir)}
+
+
+# Heuristic thresholds for the stack advisor. Honest defaults — tune per project.
+# Rationale: vector+facet+light-graph is best until the corpus is both LARGE and
+# RELATION-HEAVY (multi-hop / cross-domain answers). Only then does a graph DB /
+# GraphRAG / ontology earn its operational cost (see ADR 0017).
+_ADVISE = {"pages_big": 300, "density_rel": 2.0, "types_multi": 6,
+           "types_ontology": 8, "orphan_ratio": 0.5}
+
+
+def advise(node_dir):
+    """Watch growth signals and recommend whether to keep vector+facet or graduate to a
+    graph DB / GraphRAG / ontology. Advisory only — adoption stays a human decision."""
+    g = build(node_dir)
+    pages = len(g["nodes"])
+    links = len(g["edges"])
+    types = {}
+    for n in g["nodes"].values():
+        types[n["type"]] = types.get(n["type"], 0) + 1
+    density = round(links / pages, 2) if pages else 0.0
+    orps = orphans(node_dir)
+    orphan_ratio = round(len(orps) / pages, 2) if pages else 0.0
+    th = _ADVISE
+    reasons, recs = [], []
+    big = pages >= th["pages_big"]
+    relational = density >= th["density_rel"]
+    multi = len(types) >= th["types_multi"]
+    if big and (relational or multi):
+        recs.append("graph-db/GraphRAG")
+        reasons.append("규모↑(%d페이지) + %s — 관계기반·multi-hop 질의 비중이 커짐. "
+                       "wiki_graph.export_json → kuzu(임베디드) 또는 GraphRAG 어댑터 검토."
+                       % (pages, "링크밀도 %.1f" % density if relational else "다중도메인 %d종" % len(types)))
+    if len(types) >= th["types_ontology"]:
+        recs.append("ontology")
+        reasons.append("type %d종 — 통제어휘/스키마 검증이 이득. type→YAML 온톨로지(클래스+속성) 승격 검토."
+                       % len(types))
+    if orphan_ratio >= th["orphan_ratio"]:
+        reasons.append("고아 비율 %.0f%% — 스택 확장보다 먼저 `[[링크]]`/type 정리 권장." % (orphan_ratio * 100))
+    if not recs:
+        recs.append("vector+facet (현행 유지)")
+        reasons.append("현 규모/관계도에선 벡터+facet+경량그래프가 비용대비 최적. 임계 미달.")
+    return {"pages": pages, "links": links, "density": density, "types": types,
+            "orphan_ratio": orphan_ratio, "thresholds": th,
+            "recommend": recs, "reasons": reasons}
