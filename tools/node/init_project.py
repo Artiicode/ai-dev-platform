@@ -65,6 +65,14 @@ def init(name, link_type, url, ref, force, target=None, private=False):
     # (Empty dirs aren't carried by git, so a clone's template may lack it.)
     os.makedirs(os.path.join(dest, "repo"), exist_ok=True)
 
+    # The node owns its metadata git (history/info/context/...). repo/ is the external
+    # project code and is git-ignored here — it is managed in its own repo elsewhere.
+    try:
+        import node_git
+        print("[init] node git: %s" % node_git.ensure_repo(dest))
+    except Exception as e:
+        print("[init] node git 초기화 건너뜀: %s" % e, file=sys.stderr)
+
     rel = os.path.relpath(dest, ROOT)
     print("[init] 생성 완료: %s" % rel)
     print("     코드는 %s/repo/ 안에서만 작성한다(플랫폼 루트/현재 디렉토리 금지)." % rel)

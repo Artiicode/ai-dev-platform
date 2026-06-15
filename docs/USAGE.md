@@ -78,6 +78,13 @@ cp -n .env.example .env        # 사용할 모델 키 채우기(models.yaml 참�
 > `harness init` 으로 노드를 만들고 그 `repo/` 안에서 작업합니다. 그 코드를 독립 git 으로 관리하려면
 > `projects/my_app-node/repo/` 안에서 `git init` 하세요(플랫폼 이력과 분리).
 
+> **노드 메타 git(자동):** `init`/`bootstrap` 시 `projects/<name>-node/`에 **자체 `.git`**이 생성되어
+> AI 운영 데이터(context/scenario/history/info/manifest)의 이력을 **노드 단위로** 남깁니다. 플랫폼 repo 는
+> `/projects/*` 를 무시하므로 이 노드 git 은 플랫폼 이력과 완전 분리됩니다(submodule 아님). `ingest`/
+> `onboard`/`verify` 와 MCP 쓰기(worklog/ADR/wiki/standup)는 **자동 커밋**되고, 파일을 직접 편집했으면
+> `./harness save <node> -m "..."` 로 커밋합니다. **`repo/`(프로젝트 코드)는 외부에서 관리되는 객체**라
+> 노드 git 이 `/repo` 를 추적하지 않습니다 — 코드 이력은 그 repo 자체 git 에서 관리하세요.
+
 ```bash
 # 제로베이스:
 ./harness init my_app                # projects/my_app-node/ 생성, repo/ 는 빈 코드 디렉토리

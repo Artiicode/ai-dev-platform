@@ -240,6 +240,16 @@ def _onboarding_text():
     return open(ob, encoding="utf-8").read() if os.path.exists(ob) else ""
 
 
+def _autocommit(reason):
+    """Commit the node's metadata change to its OWN git (best-effort, never fails a tool).
+    The external project code in repo/ is git-ignored and never touched here."""
+    try:
+        import node_git
+        node_git.commit(NODE_DIR, "chore(node): %s" % reason)
+    except Exception:
+        pass
+
+
 @mcp.tool()
 def append_worklog(ticket: str, entry: str, session_token: str) -> dict:
     """history/worklog/<ticket>.md 에 타임스탬프 경과를 append(이력 규칙 강제, 시크릿 차단)."""
@@ -258,6 +268,7 @@ def append_worklog(ticket: str, entry: str, session_token: str) -> dict:
                     % (ticket, _now()))
         f.write("\n- [%s] %s\n" % (_now(), entry))
     _refresh_onboarding()
+    _autocommit("worklog %s" % ticket)
     return {"ok": True, "path": os.path.relpath(path, NODE_DIR), "created": created}
 
 
@@ -276,6 +287,7 @@ def record_decision(title: str, body: str, session_token: str) -> dict:
     path = os.path.join(adr, "%04d-%s.md" % (n, slug))
     open(path, "w", encoding="utf-8").write("# %04d. %s\n\n- date: %s\n\n%s\n" % (n, title, _now(), body))
     _refresh_onboarding()
+    _autocommit("ADR %04d %s" % (n, slug))
     return {"ok": True, "path": os.path.relpath(path, NODE_DIR)}
 
 
@@ -290,6 +302,7 @@ def standup_add(item: str, session_token: str) -> dict:
     import standup
     p = standup.add(standup.node_base(NODE_DIR), item, standup._node_name(NODE_DIR))
     _refresh_onboarding()
+    _autocommit("standup progress")
     return {"ok": True, "path": os.path.relpath(p, NODE_DIR)}
 
 
@@ -302,6 +315,7 @@ def standup_summary(today: str = "", tomorrow: str = "", session_token: str = ""
     p = standup.set_summary(standup.node_base(NODE_DIR), today or None, tomorrow or None,
                             standup._node_name(NODE_DIR))
     _refresh_onboarding()
+    _autocommit("standup summary")
     return {"ok": True, "path": os.path.relpath(p, NODE_DIR)}
 
 
@@ -315,6 +329,7 @@ def ingest_data(session_token: str, dry_run: bool = False) -> dict:
     rc = router.run(NODE_DIR, 8000, 8000, dry_run)
     if not dry_run:
         _refresh_onboarding()
+        _autocommit("ingest data/update -> info/")
     return {"ok": rc in (0, None), "node": os.path.abspath(NODE_DIR), "dry_run": dry_run}
 
 
@@ -352,6 +367,7 @@ def wiki_upsert(title: str, body: str, session_token: str, sources: list | None 
     res = wiki.upsert(NODE_DIR, title=title, body=body, sources=sources or [])
     nch = wiki.embed_page(NODE_DIR, res["slug"], _get_embedder())
     wiki.reindex(NODE_DIR)
+    _autocommit("wiki %s" % res["slug"])
     return {"ok": True, "slug": res["slug"], "path": res["path"],
             "links": res["links"], "embedded_chunks": nch}
 

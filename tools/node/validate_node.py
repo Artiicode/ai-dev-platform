@@ -145,6 +145,19 @@ def validate_node(node_dir, strict=False):
                 if not os.path.isdir(tgt_abs):
                     warnings.append("symlink target 미존재: %s (bootstrap 전이면 정상)" % tgt_abs)
 
+    # 8a. node metadata git — the node owns its history; repo/ (external code) must NOT leak in.
+    try:
+        import node_git
+        if node_git.is_repo(node_dir):
+            if node_git.repo_tracked(node_dir):
+                errors.append("repo/ 가 노드 git 에 추적됨 — 외부 코드가 노드 이력에 흡수됨"
+                              "(.gitignore 의 `/repo` 확인; repo 는 자체 repo 에서 관리)")
+        else:
+            warnings.append("노드 git 미초기화 — `harness bootstrap %s` 또는 ingest/onboard 시 자동 생성됨"
+                            % name)
+    except Exception:
+        pass
+
     # 8. private node: data / originals / derived info must not be git-tracked
     if manifest and isinstance(manifest, dict) and (manifest.get("node", {}) or {}).get("private"):
         import subprocess

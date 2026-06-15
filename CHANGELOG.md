@@ -2,6 +2,17 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.30.0] - 2026-06-15
+### Added
+- **노드 메타 자체 git — 에이전트 자동·강제 관리(ADR 0015).** `projects/<name>-node/`가 자기 자신의
+  `.git`을 갖고 AI 운영 데이터(context/scenario/history/info/manifest)의 이력을 **노드 단위로** 남긴다.
+  플랫폼 repo 는 `/projects/*`를 무시하므로 플랫폼 이력과 **완전 분리**(submodule 아님). `tools/node/node_git.py`
+  추가(`ensure_repo`/`commit`/`repo_tracked`). `harness init`/`bootstrap` 이 노드 git 자동 생성,
+  `ingest`/`onboard`/`verify` + MCP 쓰기(worklog/ADR/wiki/standup/ingest)가 **자동 커밋**, 직접 편집분은
+  새 명령 `harness save <node> -m "..."`. **`repo/`(프로젝트 코드)는 외부 객체** — 노드 git 이 `/repo`를
+  추적하지 않으며, `validate_node.py`가 repo/ 추적 시 에러·노드 git 미초기화 시 경고로 강제. 임시 노드로
+  end-to-end 검증(init 자동 git, repo/ 미추적, ingest/save 커밋, 불변식 위반 검출).
+
 ## [0.29.0] - 2026-06-15
 ### Added
 - **이미지 자산(asset) 관리 — Karpathy "LLM Wiki" 방식.** 이미지 인제스트가 OCR 텍스트만 뽑고 원본을

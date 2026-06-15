@@ -16,6 +16,7 @@
   search     벡터 RAG 시맨틱 검색
   query      info/db 읽기 전용 SQL
   onboard    history/* 스캔해 ONBOARDING.md 재생성
+  save       노드 메타 git 커밋 (repo/ 는 외부 관리라 제외; ingest/onboard/verify 는 자동 커밋)
   debug      scenario/debug 플레이북 구동 (dry-run 기본, --execute 시 락+승인)
   lock       노드 advisory 락 획득/상태
   unlock     노드 락 해제
@@ -44,10 +45,32 @@ def resolve_node(arg):
     sys.exit("[harness] 노드를 찾을 수 없음: %s (init 먼저?)" % arg)
 
 
+def _autosave(node, reason):
+    """Commit the node's metadata change to its OWN git (best-effort, never fails a command).
+    The external project code in repo/ is git-ignored and never touched here."""
+    try:
+        import node_git
+        st = node_git.commit(node, "chore(node): %s" % reason)
+        if st in ("committed", "initialized"):
+            print("[node-git] %s — %s" % (st, reason))
+    except Exception:
+        pass
+
+
 def cmd_init(a):
     import init_project
     return init_project.init(a.name, a.link_type, a.url, a.ref, a.force,
                             getattr(a, "target", None), getattr(a, "private", False))
+
+
+def cmd_save(a):
+    """Explicitly commit the node's metadata git (for direct file edits agents make)."""
+    import node_git
+    node = resolve_node(a.node)
+    msg = a.message or "update node metadata"
+    st = node_git.commit(node, msg if msg.startswith(("chore", "feat", "fix", "docs")) else "chore(node): %s" % msg)
+    print("[node-git] %s" % st)
+    return 0 if not st.endswith("-failed") and not st.startswith("init-failed") else 1
 
 
 def cmd_genrules(a):
@@ -311,12 +334,19 @@ def cmd_bootstrap(a):
     node = resolve_node(a.node); m = install.load_manifest(node)
     repo = install.link_repo(node, m["link"], a.dry_run)
     install.install_deps(repo, m.get("bootstrap", {}), a.dry_run)
+    if not a.dry_run:
+        import node_git
+        print("[node-git] %s" % node_git.ensure_repo(node))   # ensure node owns its metadata git
     print("[harness] bootstrap done."); return 0
 
 
 def cmd_ingest(a):
     import router
-    return router.run(resolve_node(a.node), a.md_max, a.vector_min, a.dry_run)
+    node = resolve_node(a.node)
+    rc = router.run(node, a.md_max, a.vector_min, a.dry_run)
+    if rc in (0, None) and not a.dry_run:
+        _autosave(node, "ingest data/update -> info/")
+    return rc
 
 
 def cmd_serve(a):
@@ -360,8 +390,11 @@ def cmd_query(a):
 
 def cmd_onboard(a):
     import gen_onboarding
-    out, na, nadr = gen_onboarding.generate(resolve_node(a.node))
-    print("[onboard] 생성: %s (활성 티켓 %d, ADR %d)" % (out, na, nadr)); return 0
+    node = resolve_node(a.node)
+    out, na, nadr = gen_onboarding.generate(node)
+    print("[onboard] 생성: %s (활성 티켓 %d, ADR %d)" % (out, na, nadr))
+    _autosave(node, "regenerate ONBOARDING.md")
+    return 0
 
 
 def cmd_debug(a):
@@ -412,7 +445,10 @@ def cmd_rebuild(a):
 
 def cmd_verify(a):
     import verify
-    return verify.run(resolve_node(a.node))
+    node = resolve_node(a.node)
+    rc = verify.run(node)
+    _autosave(node, "verify results")
+    return rc
 
 
 def cmd_webgui(a):
@@ -442,6 +478,10 @@ def build_parser():
     p.set_defaults(fn=cmd_validate)
 
     p = sub.add_parser("install-hooks"); p.set_defaults(fn=cmd_installhooks)
+
+    p = sub.add_parser("save", help="노드 메타 git 커밋(직접 편집분 저장; repo/ 는 외부 관리라 제외)")
+    p.add_argument("node"); p.add_argument("-m", "--message", default=None, help="커밋 메시지")
+    p.set_defaults(fn=cmd_save)
 
     p = sub.add_parser("update", help="플랫폼 업데이트(ff/머지) + 의존성/훅/진입규칙 갱신")
     p.add_argument("--resync", action="store_true",
