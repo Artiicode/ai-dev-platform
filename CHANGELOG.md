@@ -2,6 +2,16 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.33.1] - 2026-06-15
+### Fixed
+- **`harness start` 좌측 claude pane 이 invocation dir 에서 실행**되도록 수정. tmux `-c workdir` 는 시작
+  디렉토리만 정하는데, 인터랙티브 셸 rc(`.bashrc`→`devtools-env.sh` 등)가 그 뒤 cd 해버려 claude 가
+  엉뚱한 경로(`/home/yong` 등)에서 떴다. send-keys 로 `cd <workdir> &&` 를 prepend 해 rc 이후에 각 pane 을
+  invocation dir 로 고정(좌=claude 포함 dev 윈도우 전 pane).
+- **CI(validate-nodes) green 복구** — "AGENTS.md 정본 최신화 확인" 스텝이 최근 푸시들에서 실패했다.
+  원인은 AGENTS.md 가 `gen_agent_rules` 생성물인데 기능 추가분이 AGENTS.md 에 직접 편집돼 생성기와
+  어긋난 것(0.33.0 에서 정본 이관으로 해소). 재생성 결과가 커밋본과 일치함을 로컬에서 확인.
+
 ## [0.33.0] - 2026-06-15
 ### Added
 - **위키 스택 advisor** — `harness wiki <node> --advise`(MCP `wiki_graph` op=advise). 페이지 수·링크밀도·

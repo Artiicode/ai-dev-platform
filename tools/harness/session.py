@@ -10,6 +10,7 @@ with a numbered-input fallback when stdin/stdout aren't a TTY. Machine-local cho
 from __future__ import annotations
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -204,7 +205,11 @@ def start(session="harness", harness=None, skip_perms=None, cwd=None,
         subprocess.run(["tmux", *args], check=True, cwd=ROOT)
 
     def send(pane, cmd):
-        subprocess.run(["tmux", "send-keys", "-t", pane, cmd, "Enter"], check=True)
+        # tmux `-c workdir` only sets the START dir; an interactive shell's rc (.bashrc /
+        # devtools-env.sh etc.) may cd elsewhere afterward. send-keys runs after the shell is
+        # ready, so cd workdir HERE to pin each pane (esp. left=claude) to the invocation dir.
+        full = "cd %s && %s" % (shlex.quote(workdir), cmd)
+        subprocess.run(["tmux", "send-keys", "-t", pane, full, "Enter"], check=True)
 
     # Layout: left | right(top / bottom) — all panes start in workdir. Window name = "dev".
     tmux("new-session", "-d", "-s", session, "-n", "dev", "-c", workdir)
