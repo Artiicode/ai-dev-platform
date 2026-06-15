@@ -79,7 +79,9 @@
 | "bitbucket/jira/figma MCP 붙여줘" | `platform/mcp-servers.yaml` 의 `enabled` 에 해당 서버 추가(없으면 `servers:` 에 정의; **레지스트리엔 `${ENV_VAR}` 참조만**) → `./harness mcp <harness> --node <node>` → **자격증명은 `.env`(gitignored)에 넣게 안내**(자동 주입, export 아님) |
 | "이 데이터 넣어줘/인제스트" | 파일을 `projects/<node>-node/data/update/` 에 두고 `./harness ingest <node>` (원본→archives, 출처→info/index.yaml) |
 | "여러 프로젝트가 공통으로 쓸 자료야 / 공통 컨벤션·레퍼런스" | 공유 노드에 **한 번만** 적재: `./harness init _shared`(없으면) → `_shared` 의 `data/update/` 에 두고 `./harness ingest _shared`. 그 자료를 쓸 프로젝트는 manifest `node.shares: [_shared]`(또는 `init --shares _shared`) — 검색/읽기가 own+shared 로 페더레이션된다. 매 노드에 복붙하지 말 것 |
-| "검색/찾아줘" (의미 검색) | MCP `search_info`/`search_all` 또는 `./harness search <node> "<질의>"` |
+| "검색/찾아줘" (의미 검색) | MCP `search_info`/`search_all` 또는 `./harness search <node> "<질의>"` (특정 분류만: `--type risk`) |
+| "위키 정리/추적성/관계 보고싶어" | 위키는 평면 슬러그 + `type` facet + `[[링크]]` 그래프. 문서맵 `./harness wiki <node> --reindex`(type별 INDEX), 그래프 `--graph/--neighbors/--path/--orphans`(MCP `wiki_graph`). 페이지 작성 시 `wiki_upsert(type=...)` 로 분류 |
+| "Jira 티켓/PR 목록 위키에 넣어줘" | 소스 도구(Jira MCP·`gh`)로 JSON/TSV 추출 → `./harness import <node> <file> --type ticket`(key/status/url 프론트매터 위키 페이지로 변환·임베딩) |
 | "테스트/검증 돌려줘" | `./harness verify <node>` (결과는 자동으로 ONBOARDING 에 반영 + 노드 git 자동 커밋) |
 | "노드 변경분 저장/커밋해줘" | `./harness save <node> -m "<요약>"` (노드 메타 git 커밋; `/repo` 는 외부 관리라 제외). ingest/onboard/verify·MCP 쓰기는 자동 커밋되므로 보통 직접 편집분만 |
 | "오늘 할 일 추가 / 스탠드업" | 할일 `./harness standup --add-task "<할 일>"`(또는 `/add-task`) · 진행 `--add "<항목>"` · 요약 `--today/--tomorrow` · 보기 `--show`. **노드 생략=플랫폼 개인 일일 플랜**(`harness start` 의 subtask 창), `<node>` 지정=프로젝트 standup. 전날 미완료(`- [ ]`)·내일계획은 오늘로 자동 carry-over, 비면 "없음" |

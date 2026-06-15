@@ -126,7 +126,7 @@ projects/<project>-node/
 │   ├── md/                #   소량/권위 문서 (git-diff 가능)
 │   ├── db/                #   정형 데이터 (SQLite/DuckDB)  예: 로봇암 x,y,z
 │   ├── vector/            #   대량 비정형 텍스트 임베딩 (RAG)
-│   ├── wiki/              #   엔티티 위키 페이지([[링크]]·INDEX). 이미지는 ![](../assets/..) 카드
+│   ├── wiki/              #   엔티티 위키(평면 슬러그 + type facet + [[링크]] 그래프). INDEX=type별 문서맵, SSOT.md=큐레이션
 │   ├── assets/            #   이미지 원본 보존(위키 카드가 참조, 에이전트가 Read로 on-demand 열람)
 │   └── index.yaml         #   ★ 라우팅 결정 + provenance 인덱스 (§6)
 ├── archives/              # ★ 진실 원본. 인제스트에 쓰인 파일 원본 보관

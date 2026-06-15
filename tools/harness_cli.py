@@ -5,6 +5,7 @@
   init       새 프로젝트 노드 생성 (_template-node 복제)
   bootstrap  manifest 기반 repo 링크 + 의존성 설치
   ingest     data/update/* -> info/ (md/sql/vector) 적재
+  import     외부 항목 목록(JSON/TSV: 티켓/PR) -> type 위키 페이지 일괄 적재
   update     플랫폼 업데이트 받기 (git pull --ff-only + 의존성/훅/진입규칙 갱신)
   use        하네스 동적 주입 (enabled 추가 + 진입규칙/스킬 생성): harness use cursor
   mcp        MCP 와이어링 (substrate + 외부 MCP jira/figma 등 → 하네스 설정 병합)
@@ -311,7 +312,7 @@ def cmd_wikicompile(a):
 
 
 def cmd_wiki(a):
-    import wiki
+    import json, wiki
     node = resolve_node(a.node)
     if a.reindex:
         print("[wiki] INDEX 재생성: %s" % wiki.reindex(node))
@@ -321,10 +322,30 @@ def cmd_wiki(a):
     if a.links:
         rep = wiki.link_report(node)
         print("[wiki] dangling 링크: %s" % (rep["dangling"] or "없음"))
-    if not (a.reindex or a.embed or a.links):
+    # graph queries ([[link]] 그래프; neo4j 없이 stdlib)
+    graph_op = a.graph or a.neighbors or a.path or a.orphans or a.export
+    if graph_op:
+        import wiki_graph
+        if a.neighbors:
+            print(json.dumps(wiki_graph.neighbors(node, a.neighbors), ensure_ascii=False, indent=2))
+        elif a.path:
+            src, _, dst = a.path.partition(":")
+            p = wiki_graph.path(node, src, dst)
+            print("[wiki] path %s→%s: %s" % (src, dst, " → ".join(p) if p else "(연결 없음)"))
+        elif a.orphans:
+            orp = wiki_graph.orphans(node)
+            print("[wiki] orphans(%d): %s" % (len(orp), ", ".join(orp) or "없음"))
+        elif a.export:
+            print("[wiki] graph export: %s" % wiki_graph.export_json(node))
+        else:  # --graph summary
+            print(json.dumps(wiki_graph.summary(node), ensure_ascii=False, indent=2))
+    if not (a.reindex or a.embed or a.links or graph_op):
         pages = wiki.list_pages(node)
         for s in pages:
-            print("  %-30s links=%s" % (s, wiki.read(node, s)["links"] or "-"))
+            pg = wiki.read(node, s); t = (pg["frontmatter"] or {}).get("type", "uncategorized")
+            if a.type and t != a.type:
+                continue
+            print("  [%-12s] %-30s links=%s" % (t, s, pg["links"] or "-"))
         if not pages:
             print("  (엔티티 페이지 없음 — route=wiki 로 인제스트하거나 wiki_upsert)")
     return 0
@@ -347,6 +368,16 @@ def cmd_ingest(a):
     rc = router.run(node, a.md_max, a.vector_min, a.dry_run)
     if rc in (0, None) and not a.dry_run:
         _autosave(node, "ingest data/update -> info/")
+    return rc
+
+
+def cmd_import(a):
+    """Bulk-import an external item list (JSON/TSV: tickets/PRs) as typed wiki pages."""
+    import import_items
+    node = resolve_node(a.node)
+    rc = import_items.run(node, a.file, a.type, a.dry_run)
+    if rc in (0, None) and not a.dry_run:
+        _autosave(node, "import %s -> wiki" % os.path.basename(a.file))
     return rc
 
 
@@ -373,7 +404,7 @@ def cmd_info(a):
 
 
 def cmd_search(a):
-    res = _server_for(a.node).search_all(a.query, a.k)
+    res = _server_for(a.node).search_all(a.query, a.k, getattr(a, "type", None))
     for h in res.get("hits", []):
         org = h.get("origin", "self")
         tag = h.get("kind", "?") if org == "self" else "%s@%s" % (h.get("kind", "?"), org)
@@ -537,6 +568,12 @@ def build_parser():
     p = sub.add_parser("wiki"); p.add_argument("node")
     p.add_argument("--reindex", action="store_true"); p.add_argument("--embed", action="store_true")
     p.add_argument("--links", action="store_true", help="dangling [[link]] 리포트")
+    p.add_argument("--type", default=None, help="목록을 이 facet 으로 한정")
+    p.add_argument("--graph", action="store_true", help="[[링크]] 그래프 요약(페이지/링크/type/고아/dangling)")
+    p.add_argument("--neighbors", default=None, metavar="SLUG", help="해당 페이지의 out/in 링크")
+    p.add_argument("--path", default=None, metavar="SRC:DST", help="두 페이지 간 최단 [[링크]] 경로")
+    p.add_argument("--orphans", action="store_true", help="고립 페이지(in/out 링크 없음)")
+    p.add_argument("--export", action="store_true", help="그래프를 info/wiki/graph.json 으로 export")
     p.set_defaults(fn=cmd_wiki)
 
     p = sub.add_parser("wiki-compile"); p.add_argument("node")  # 키 있을 때 LLM 자동 병합(없으면 no-op)
@@ -549,6 +586,11 @@ def build_parser():
     p.add_argument("--md-max", type=int, default=8000); p.add_argument("--vector-min", type=int, default=8000)
     p.add_argument("--dry-run", action="store_true"); p.set_defaults(fn=cmd_ingest)
 
+    p = sub.add_parser("import", help="외부 항목 목록(JSON/TSV: 티켓/PR)을 type 위키 페이지로 일괄 적재")
+    p.add_argument("node"); p.add_argument("file", help="JSON/TSV 항목 목록")
+    p.add_argument("--type", default=None, help="강제 type(예: ticket, pr)")
+    p.add_argument("--dry-run", action="store_true"); p.set_defaults(fn=cmd_import)
+
     p = sub.add_parser("serve"); p.add_argument("node")
     p.add_argument("--transport", choices=["stdio", "sse", "streamable-http"], default=None)
     p.set_defaults(fn=cmd_serve)
@@ -556,7 +598,9 @@ def build_parser():
     p = sub.add_parser("info"); p.add_argument("node"); p.set_defaults(fn=cmd_info)
 
     p = sub.add_parser("search"); p.add_argument("node"); p.add_argument("query")
-    p.add_argument("-k", type=int, default=5); p.set_defaults(fn=cmd_search)
+    p.add_argument("-k", type=int, default=5)
+    p.add_argument("--type", default=None, help="위키 facet 한정(hardware/requirements/risk/ticket/pr 등)")
+    p.set_defaults(fn=cmd_search)
 
     p = sub.add_parser("query"); p.add_argument("node"); p.add_argument("sql")
     p.add_argument("--db", default=None); p.set_defaults(fn=cmd_query)

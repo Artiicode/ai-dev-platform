@@ -155,38 +155,56 @@ def list_info() -> dict:
 
 
 @mcp.tool()
-def search_info(query: str, k: int = 5) -> list:
-    """벡터 RAG 시맨틱 검색(이 노드 + manifest `node.shares` 의 공유 노드). 거리순 병합, 출처 노드 태깅."""
+def search_info(query: str, k: int = 5, type: str | None = None) -> list:
+    """벡터 RAG 시맨틱 검색(이 노드 + manifest `node.shares` 의 공유 노드). 거리순 병합, 출처 노드 태깅.
+    type 지정 시 그 facet(예: hardware/requirements/risk/ticket)의 위키 페이지로만 한정."""
     import vectorstore
     emb = _get_embedder()
     qv = emb.embed_query([query])[0]      # 쿼리 비대칭 인코딩(Qwen instruction)
-    results = []
+    fetch = k * 4 if type else k          # type 필터 시 넉넉히 받아 사후 필터
+    results, dir_by_origin = [], {}
     for ndir in _search_dirs():
+        origin = _origin_of(ndir)
+        dir_by_origin[origin] = ndir
         vec_path = os.path.join(ndir, "info", "vector", "store.db")
         if not os.path.exists(vec_path):
             continue
         try:                              # 임베딩 차원 불일치 등은 그 노드만 건너뜀
             store = vectorstore.VectorStore(vec_path, emb.dim)
-            hits = store.search(qv, k)
+            hits = store.search(qv, fetch)
             store.close()
         except Exception:
             continue
-        origin = _origin_of(ndir)
         for h in hits:                    # 출처 종류(위키/RAG) + 출처 노드 태깅
             h["kind"] = "wiki" if str(h.get("doc_id", "")).startswith("wiki:") else "rag"
             h["origin"] = origin
         results.extend(hits)
+    if type:                              # facet 필터(위키 페이지만; type 은 위키 도메인)
+        import wiki
+        kept = []
+        for h in results:
+            did = str(h.get("doc_id", ""))
+            if not did.startswith("wiki:"):
+                continue
+            nd = dir_by_origin.get(h.get("origin", "self"), NODE_DIR)
+            pg = wiki.read(nd, did.split(":", 1)[1])
+            if pg and (pg["frontmatter"] or {}).get("type") == type:
+                h["type"] = type
+                kept.append(h)
+        results = kept
     if not results:
-        return [{"error": "벡터 스토어 없음(이 노드/공유 노드 모두). 먼저 router 로 인제스트하세요."}]
+        return [{"error": "결과 없음(벡터 스토어/facet)."}]
     results.sort(key=lambda h: h.get("distance", 9e9))
     return results[:k]
 
 
 @mcp.tool()
-def search_all(query: str, k: int = 5) -> dict:
+def search_all(query: str, k: int = 5, type: str | None = None) -> dict:
     """하이브리드 검색: 벡터(위키+RAG, kind 태그) + 정형(질의어와 매칭되는 SQL 테이블/컬럼 힌트).
-    정확값이 필요하면 sql_matches 의 테이블을 query_sql 로 조회하라."""
-    hits = [h for h in search_info(query, k) if "error" not in h]
+    정확값이 필요하면 sql_matches 의 테이블을 query_sql 로 조회하라. type 지정 시 위키 facet 으로 한정(SQL 생략)."""
+    hits = [h for h in search_info(query, k, type) if "error" not in h]
+    if type:                                 # facet 한정 = 위키 도메인 의도 → SQL 힌트 생략
+        return {"hits": hits, "sql_matches": []}
     toks = [t.lower() for t in re.findall(r"[A-Za-z0-9가-힣]{3,}", query)]
     sql_matches = []
     for ndir in _search_dirs():
@@ -393,10 +411,17 @@ def ingest_data(session_token: str, dry_run: bool = False) -> dict:
 
 
 @mcp.tool()
-def wiki_list() -> list:
-    """이 노드의 엔티티 위키 페이지 목록(+ 각 페이지의 [[links]])."""
+def wiki_list(type: str | None = None) -> list:
+    """이 노드의 엔티티 위키 페이지 목록(+ type facet + [[links]]). type 지정 시 그 facet 만."""
     import wiki
-    return [{"slug": s, "links": wiki.read(NODE_DIR, s)["links"]} for s in wiki.list_pages(NODE_DIR)]
+    out = []
+    for s in wiki.list_pages(NODE_DIR):
+        pg = wiki.read(NODE_DIR, s)
+        t = (pg["frontmatter"] or {}).get("type", "uncategorized")
+        if type and t != type:
+            continue
+        out.append({"slug": s, "type": t, "links": pg["links"]})
+    return out
 
 
 @mcp.tool()
@@ -414,16 +439,33 @@ def wiki_links() -> dict:
 
 
 @mcp.tool()
-def wiki_upsert(title: str, body: str, session_token: str, sources: list | None = None) -> dict:
+def wiki_graph(op: str = "summary", slug: str | None = None, target: str | None = None) -> dict:
+    """[[link]] 그래프 질의(neo4j 불요). op: summary | neighbors(slug) | path(slug→target) | orphans."""
+    import wiki_graph as wg
+    if op == "neighbors":
+        return wg.neighbors(NODE_DIR, slug) if slug else {"error": "slug 필요"}
+    if op == "path":
+        if not (slug and target):
+            return {"error": "slug 와 target 필요"}
+        return {"path": wg.path(NODE_DIR, slug, target)}
+    if op == "orphans":
+        return {"orphans": wg.orphans(NODE_DIR)}
+    return wg.summary(NODE_DIR)
+
+
+@mcp.tool()
+def wiki_upsert(title: str, body: str, session_token: str, sources: list | None = None,
+                type: str | None = None) -> dict:
     """엔티티 위키 페이지 생성/병합(자기유지 위키). 에이전트가 관련 페이지를 읽고 병합·중복제거·[[링크]]한
-    완성본을 넘기면, 결정적으로 저장 + 벡터 임베딩 + INDEX 갱신한다. (강제성 ② 토큰 게이트)"""
+    완성본을 넘기면, 결정적으로 저장 + 벡터 임베딩 + INDEX 갱신한다. (강제성 ② 토큰 게이트)
+    type: 분류 facet(hardware/requirements/risk/ticket/pr 등) — INDEX 그룹·검색 필터에 사용."""
     if not _need_token(session_token):
         return {"error": "유효한 session_token 필요 — 먼저 begin_session() 호출."}
     sec = _secret_in(body)
     if sec:
         return {"error": "평문 시크릿 의심(%s)." % sec}
     import wiki
-    res = wiki.upsert(NODE_DIR, title=title, body=body, sources=sources or [])
+    res = wiki.upsert(NODE_DIR, title=title, body=body, sources=sources or [], type=type)
     nch = wiki.embed_page(NODE_DIR, res["slug"], _get_embedder())
     wiki.reindex(NODE_DIR)
     _autocommit("wiki %s" % res["slug"])

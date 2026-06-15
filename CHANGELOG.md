@@ -2,6 +2,16 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.32.0] - 2026-06-15
+### Added
+- **위키 v2 — 분류(type) facet + `[[링크]]` 그래프 + 외부 항목 import(ADR 0017).** 평면 위키에 다음을 추가:
+  (1) **type facet**(hardware/requirements/risk/regulatory/test/ticket/pr/image/general) — ingest 자동추론
+  + `wiki_upsert(type=)`, `INDEX.md` 가 type별 그룹(사람용 문서맵), 큐레이션 `SSOT.md` 보존, 검색 `--type`
+  필터; (2) **그래프 질의** `tools/lib/wiki_graph.py`(neighbors/backlinks/orphans/path/export, neo4j 불요) —
+  `harness wiki --graph|--neighbors|--path|--orphans|--export` + MCP `wiki_graph`; (3) **외부 항목 import**
+  `tools/data-to-info/import_items.py` — JSON/TSV(티켓/PR) → key/status/url 위키 페이지(소스 비종속) +
+  `harness import`. 임시 노드로 type 추론·그룹 INDEX·그래프 path/neighbors·검색 facet·티켓 import 검증.
+
 ## [0.31.0] - 2026-06-15
 ### Added
 - **프로젝트 간 공유 지식 — 공유 노드 + 검색 페더레이션(ADR 0016).** 공통 자료(컨벤션·레퍼런스·HW

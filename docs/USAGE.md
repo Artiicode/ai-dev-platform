@@ -102,6 +102,18 @@ cp ~/specs/*.pdf  ~/data/*.json  projects/my_proj-node/data/update/
 라우팅 규칙: 정형(.json/.csv/.tsv)→SQL, 문서는 추출 후 길면 벡터·짧으면 md, 이미지는 `info/assets/` 보존 +
 위키 카드(`![](../assets/..)`)로 항상 적재(무-OCR도 skip 안 됨).
 
+> **위키 분류(type) · 그래프 · 외부 항목 import.** 위키 페이지는 **평면 슬러그 + `type` facet**으로 관리한다
+> (폴더 계층 대신 다차원 `[[링크]]` 그래프 + 분류 facet). ingest 시 파일명/내용으로 type 자동추론
+> (hardware/requirements/risk/regulatory/test/ticket/pr/image/general), 에이전트는 `wiki_upsert(type=)`로 지정.
+> - **탐색/문서맵:** `harness wiki <node> --reindex` → `INDEX.md`를 **type별 그룹**으로 생성(사람용 맵).
+>   사람이 큐레이션한 `info/wiki/SSOT.md`는 자동생성이 건드리지 않는다(엔티티 페이지에서도 제외).
+> - **검색 facet 한정:** `harness search <node> "<질의>" --type risk` (MCP `search_info`/`search_all` 의 `type`).
+> - **그래프 질의(neo4j 불요):** `harness wiki <node> --graph|--neighbors <slug>|--path A:B|--orphans|--export`
+>   (MCP `wiki_graph`). 요구사항↔리스크↔티켓 같은 추적성을 `[[링크]]` 그래프로 따라간다.
+> - **외부 항목(티켓/PR) import:** `harness import <node> <items.json|.tsv> --type ticket`. 실제 fetch 는
+>   소스별 도구(Jira MCP·`gh`)가 JSON/TSV 로 떨궈주고, importer 가 key/status/url 프론트매터 위키 페이지로
+>   변환·임베딩한다(플랫폼 코어는 소스 비종속).
+
 > **공유 지식 노드(프로젝트 간 공통 데이터):** 여러 프로젝트가 같은 자료(코딩 컨벤션·HW 데이터시트·공통
 > 레퍼런스)를 쓸 때 매 노드에 복붙하지 않는다. 전용 **공유 노드**(예: `./harness init _shared`)에 **한 번만**
 > ingest 하고, 쓰는 프로젝트는 manifest `node.shares: [_shared]`(또는 `harness init <name> --shares _shared`)로

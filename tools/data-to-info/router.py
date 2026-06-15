@@ -30,6 +30,28 @@ import wiki        # noqa: E402  (route=wiki → 엔티티 위키 페이지 + �
 import locks       # noqa: E402  (동시 ingest 차단: state/ingest.json)
 
 
+# Filename/content → wiki type facet (Robert-style taxonomy, auto-inferred at ingest).
+# First match wins; default "general". Agents can override via wiki_upsert(type=...).
+_TYPE_HINTS = [
+    ("requirements", ("requirement", "srs", "-req", "req-")),
+    ("risk",         ("risk", "fmea", "fmeca", "fta", "hazard", "14971")),
+    ("regulatory",   ("iec-", "iso-", "fda", "60601", "62304", "regulatory")),
+    ("qms",          ("qms", "document-control", "change-control", "good-documentation")),
+    ("test",         ("test", "verification", "validation", "-te-", "swta")),
+    ("hardware",     ("hardware", "-hw", "schematic", "connectivity", "pinout", "eeprom")),
+    ("ticket",       ("ticket", "jira", "-issue")),
+    ("pr",           ("pr-", "pull-request", "pullrequest")),
+]
+
+
+def _infer_type(name, text):
+    hay = (os.path.splitext(name)[0] + " " + (text or "")[:200]).lower()
+    for t, keys in _TYPE_HINTS:
+        if any(k in hay for k in keys):
+            return t
+    return "general"
+
+
 def _title_for(name, text):
     """엔티티 제목: 텍스트의 첫 H1 우선, 없으면 파일명(힌트 토큰 제거)."""
     if text:
@@ -214,9 +236,11 @@ def _process(node_dir, files, archive_dir, md_max, vector_min, dry_run):
             if text is None:
                 text = open(src, encoding="utf-8", errors="replace").read()
             sha = provenance.sha256_of(src)
-            body = _image_card(node_dir, src, name, text, sha) if ext in extractor.IMAGE else text
+            is_img = ext in extractor.IMAGE
+            body = _image_card(node_dir, src, name, text, sha) if is_img else text
+            wtype = "image" if is_img else _infer_type(name, text)
             res_w = wiki.upsert(node_dir, title=_title_for(name, text), body=body,
-                                sources=[{"id": name, "sha256": sha}])
+                                type=wtype, sources=[{"id": name, "sha256": sha}])
             if embedder is None: embedder = _load_embedder()
             nch = wiki.embed_page(node_dir, res_w["slug"], embedder)
             wiki.reindex(node_dir)

@@ -35,7 +35,7 @@ def list_pages(node_dir: str):
     if not os.path.isdir(d):
         return []
     return sorted(f[:-3] for f in os.listdir(d)
-                  if f.endswith(".md") and f != "INDEX.md")
+                  if f.endswith(".md") and f not in ("INDEX.md", "SSOT.md"))  # auto-index + curated map
 
 
 def read(node_dir: str, slug: str):
@@ -60,15 +60,24 @@ def extract_links(text: str):
     return sorted(set(_LINK_RE.findall(text or "")))
 
 
-def upsert(node_dir: str, *, title: str, body: str, sources=None, slug: str = None) -> dict:
-    """엔티티 페이지 생성/덮어쓰기(결정적). 병합 판단은 호출자(에이전트/LLM)가 한 뒤 완성본을 넘긴다."""
+def upsert(node_dir: str, *, title: str, body: str, sources=None, slug: str = None,
+           type: str = None, extra: dict = None) -> dict:
+    """엔티티 페이지 생성/덮어쓰기(결정적). 병합 판단은 호출자(에이전트/LLM)가 한 뒤 완성본을 넘긴다.
+
+    type: 분류 facet(예: hardware/requirements/risk/ticket/pr/image). INDEX 그룹핑·검색 필터에 사용.
+    extra: 프론트매터에 추가할 필드(예: 티켓의 key/status/url)."""
     slug = slug or slugify(title)
     os.makedirs(wiki_dir(node_dir), exist_ok=True)
     srcs = sources or []
+    meta = {"entity": title, "slug": slug}
+    if type:
+        meta["type"] = type
+    meta.update(extra or {})
+    meta["sources"] = srcs
+    meta["updated"] = _now()
     try:
         import yaml
-        fm = yaml.safe_dump({"entity": title, "slug": slug, "sources": srcs, "updated": _now()},
-                            allow_unicode=True, sort_keys=False).strip()
+        fm = yaml.safe_dump(meta, allow_unicode=True, sort_keys=False).strip()
     except Exception:
         fm = "entity: %s\nslug: %s\nupdated: %s" % (title, slug, _now())
     b = re.sub(r"^#\s+.*\n+", "", body.strip(), count=1)  # 본문 선두 H1 제거(제목 중복 방지)
@@ -106,17 +115,26 @@ def link_report(node_dir: str) -> dict:
 
 
 def reindex(node_dir: str) -> str:
-    """INDEX.md 재생성(엔티티 목록 + 링크 요약)."""
+    """INDEX.md 재생성 — type(facet)별 그룹핑된 엔티티 목록 + 링크 요약(사람 탐색용 문서맵).
+    사람이 큐레이션한 SSOT.md 는 건드리지 않는다(별도 파일)."""
     pages = list_pages(node_dir)
-    lines = ["# 위키 인덱스 (자동 생성 — `harness wiki --reindex`)", ""]
+    by_type = {}
     for slug in pages:
         pg = read(node_dir, slug)
-        title = (pg["frontmatter"] or {}).get("entity", slug)
-        links = ", ".join("[[%s]]" % l for l in pg["links"]) if pg["links"] else "-"
-        lines.append("- [[%s]] (`%s.md`) → %s" % (title, slug, links))
+        fm = pg["frontmatter"] or {}
+        t = fm.get("type") or "uncategorized"
+        by_type.setdefault(t, []).append((slug, fm.get("entity", slug), pg["links"]))
+    lines = ["# 위키 인덱스 (자동 생성 — `harness wiki --reindex`)", "",
+             "_%d 페이지 · %d 종류. 큐레이션 맵은 `SSOT.md`(있으면)._" % (len(pages), len(by_type)), ""]
+    for t in sorted(by_type):
+        lines.append("## %s (%d)" % (t, len(by_type[t])))
+        for slug, title, links in sorted(by_type[t]):
+            ln = ", ".join("[[%s]]" % l for l in links) if links else "-"
+            lines.append("- [[%s]] (`%s.md`) → %s" % (title, slug, ln))
+        lines.append("")
     if not pages:
         lines.append("(아직 엔티티 페이지 없음)")
-    out = "\n".join(lines) + "\n"
+    out = "\n".join(lines).rstrip() + "\n"
     os.makedirs(wiki_dir(node_dir), exist_ok=True)
     open(os.path.join(wiki_dir(node_dir), "INDEX.md"), "w", encoding="utf-8").write(out)
     return os.path.relpath(os.path.join(wiki_dir(node_dir), "INDEX.md"), node_dir)
