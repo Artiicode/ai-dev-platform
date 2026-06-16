@@ -2,6 +2,24 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.36.0] - 2026-06-16
+### Changed
+- **워크트리를 `<node>/worktree/<branch>/` 로 — 하나의 공유 노드 허브(ADR 0018).** 기존 `state/wt-<branch>`
+  는 node-git 이 무시하지 않아 **워크트리 코드가 노드 메타 git 에 흡수**됐고(오염), `state/` 에 묻혀 개념도
+  불명확했다. 이제 워크트리는 `worktree/<branch>/` 에 생성하고 node `.gitignore` 가 `/worktree` 를 무시한다.
+  노드는 1개(공유 허브) — 모든 워크트리가 노드의 `info/context/history/scenario/conventions` 를 공유하고,
+  브랜치별로 다른 건 코드(repo·worktree/*)뿐. `resolve_node` 가 워크트리 경로에서 상위로 올라가 노드를
+  찾으므로 워크트리 안에서 `harness <cmd>` 실행도 그 노드로 resolve. (기존 `state/wt-*` 는 `git worktree
+  move` 또는 재생성으로 이전.) 임시 노드로 위치·node-git 미추적·resolve 검증.
+
+## [0.35.1] - 2026-06-16
+### Changed
+- **일일 플랜 프로젝트 집계 — 코드 작업만, compact, 시인성 개선.** roll-up 이 worklog/standup 원시 라인을
+  그대로 나열해 인제스트 등 플랫폼/데이터파이프라인 메타가 섞이고 보기 나빴다. 이제 **플랫폼 메타 제외**
+  (인제스트/provenance/재색인/rebuild/온보딩 재생성/index.yaml 등 휴리스틱 필터), **노드당 상한·길이 트림**,
+  **노드별 그룹 + 빈 줄 + 들여쓰기 불릿**(`[node]` → `- HH:MM (ticket) 요약`)으로 재포맷. 섹션명
+  `## 오늘 프로젝트 작업`. `project_rollup(per_node, width)` + `_is_meta`/`_parse_hm`.
+
 ## [0.35.0] - 2026-06-16
 ### Added
 - **Excel 시트별 하이브리드 라우팅(정확도↑, 소실 0).** 표(tabular) 시트는 **`info/db/<파일>.sqlite`

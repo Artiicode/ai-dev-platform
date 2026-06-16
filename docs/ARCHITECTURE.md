@@ -120,7 +120,8 @@ projects/<project>-node/
 ├── .git/                  # ★ 노드 메타 자체 git(자동). 플랫폼은 /projects/* 무시 → 이력 완전 분리
 ├── .gitignore             #   /repo(외부 코드) + 재생성물(vector)·시크릿·캐시 제외
 ├── manifest.yaml          # 노드 정체성 + repo link 설정 + 스키마 버전 (§4)
-├── repo/                  # ★ 실제 코드. AI 파일 절대 금지. 외부 repo 에서 관리(노드 git 미추적)
+├── repo/                  # ★ 실제 코드(primary 체크아웃). AI 파일 절대 금지. 외부 repo 관리(노드 git 미추적)
+├── worktree/              # 브랜치별 git worktree(repo 체크아웃). 코드라 노드 git 미추적 — 모두 이 노드를 공유
 ├── data/update/           # 인제스트 인박스 — 유저가 pdf/img/docx/md/db/code 투입
 ├── info/                  # ★ 파생물(재생성 가능). AI가 읽는 정보
 │   ├── md/                #   소량/권위 문서 (git-diff 가능)

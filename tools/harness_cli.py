@@ -43,6 +43,13 @@ def resolve_node(arg):
               os.path.join(ROOT, "projects", arg)]:
         if os.path.isdir(c) and os.path.exists(os.path.join(c, "manifest.yaml")):
             return os.path.abspath(c)
+    # Fallback: arg is a path inside a node (e.g. a worktree/<branch> or repo/) → walk up to the
+    # node root so commands run from within a worktree resolve to the one shared node.
+    p = os.path.abspath(os.path.expanduser(arg))
+    while p and p != os.path.dirname(p):
+        if os.path.basename(p).endswith("-node") and os.path.exists(os.path.join(p, "manifest.yaml")):
+            return p
+        p = os.path.dirname(p)
     sys.exit("[harness] 노드를 찾을 수 없음: %s (init 먼저?)" % arg)
 
 
@@ -471,7 +478,9 @@ def cmd_worktree(a):
     node = resolve_node(a.node)
     repo = os.path.join(node, "repo")
     branch = a.branch or ("%s-work" % a.ticket)
-    wt = a.path or os.path.join(node, "state", "wt-%s" % branch)
+    # Worktrees live under the node's worktree/ (git-ignored by node-git): one shared node hub,
+    # many branch checkouts that all see the node's info/context/history.
+    wt = a.path or os.path.join(node, "worktree", branch)
     res = worktree.create(repo, branch, wt, base=a.base, dry=a.dry_run)
     print("[worktree] %s" % (res or "no-op")); return 0
 

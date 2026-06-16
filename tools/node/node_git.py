@@ -21,6 +21,9 @@ _GITIGNORE_BASE = """\
 # External project code — managed in its own repo elsewhere, NEVER by the node.
 /repo
 
+# Branch worktrees (code checkouts of repo/, per branch) — external code, not node metadata.
+/worktree
+
 # Transient runtime (locks / ingest state)
 state/lock.json
 state/ingest.json
