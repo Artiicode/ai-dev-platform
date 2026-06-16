@@ -70,27 +70,47 @@ def _html(path):
     return (txt, "html") if txt else (None, "html: 텍스트 없음")
 
 
-def _xlsx(path):
-    """Excel → 시트별 표(markdown). 핵심: iter_rows(values_only=True) 로 **셀 값**을 직접 받는다.
-    (read_only 모드에서 셀 객체를 그대로 문자열화하면 `<ReadOnlyCell ...>` 가 박혀 값이 소실된다.)
-    data_only=True → 수식 대신 계산된 값."""
+def _nonempty(v):
+    return v is not None and str(v).strip() != ""
+
+
+def _is_tabular(rows):
+    """Header row + data rows shaped like a table → SQL is the accurate store. Else free-form."""
+    if len(rows) < 2:
+        return False
+    if sum(1 for c in rows[0] if _nonempty(c)) < 2:        # need a real (≥2 col) header
+        return False
+    data = rows[1:]
+    multi = sum(1 for r in data if sum(1 for c in r if _nonempty(c)) >= 2)
+    return multi >= max(1, len(data) // 2)                 # most data rows are multi-column
+
+
+def xlsx_sheets(path):
+    """Per-sheet structured rows for hybrid routing (tabular→SQL, free-form→text).
+    Returns (sheets, note); sheet = {title, rows:[[val,...]], tabular:bool}. Values preserved
+    (numbers stay numeric) via iter_rows(values_only=True) — no `<ReadOnlyCell>` placeholders."""
     import openpyxl
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
-    nsheets = len(wb.sheetnames)
-    parts = []
+    sheets = []
     for ws in wb.worksheets:
-        rows = []
-        for row in ws.iter_rows(values_only=True):     # values_only → 값 튜플(셀 객체 아님)
-            cells = ["" if v is None else str(v).strip() for v in row]
-            if any(cells):                             # 완전 빈 행은 건너뜀
-                rows.append(cells)
+        rows = [list(row) for row in ws.iter_rows(values_only=True) if any(_nonempty(c) for c in row)]
         if rows:
-            parts.append("## %s" % ws.title)
-            parts.extend(" | ".join(r) for r in rows)
-            parts.append("")
+            sheets.append({"title": ws.title, "rows": rows, "tabular": _is_tabular(rows)})
     wb.close()
+    return (sheets, "xlsx:%dsheets" % len(sheets)) if sheets else ([], "xlsx: 빈 워크북")
+
+
+def _xlsx(path):
+    """Excel → 시트별 표(markdown, full text). 핵심: iter_rows(values_only=True) 로 **셀 값**을 직접 받는다.
+    (read_only 모드에서 셀 객체를 그대로 문자열화하면 `<ReadOnlyCell ...>` 가 박혀 값이 소실된다.)"""
+    sheets, note = xlsx_sheets(path)
+    parts = []
+    for sh in sheets:
+        parts.append("## %s" % sh["title"])
+        parts.extend(" | ".join("" if c is None else str(c).strip() for c in r) for r in sh["rows"])
+        parts.append("")
     txt = "\n".join(parts).strip()
-    return (txt, "xlsx:%dsheets" % nsheets) if txt else (None, "xlsx: 빈 워크북")
+    return (txt, note) if txt else (None, note)
 
 
 def _ocr(path):

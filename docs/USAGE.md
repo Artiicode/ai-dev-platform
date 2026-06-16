@@ -100,7 +100,9 @@ cp ~/specs/*.pdf  ~/data/*.json  projects/my_proj-node/data/update/
 ```
 
 라우팅 규칙: 정형(.json/.csv/.tsv)→SQL, 문서는 추출 후 길면 벡터·짧으면 md, 이미지는 `info/assets/` 보존 +
-위키 카드(`![](../assets/..)`)로 항상 적재(무-OCR도 skip 안 됨).
+위키 카드(`![](../assets/..)`)로 항상 적재(무-OCR도 skip 안 됨). **Excel(.xlsx/.xlsm)은 시트별 하이브리드** —
+표 시트는 **SQL 테이블**(`info/db/<파일>.sqlite`, 정확 조회·집계)로, 서술 시트는 텍스트로, 그리고 컬럼·미리보기·
+`query_sql` 포인터를 담은 **위키 카드**(의미검색 발견용)로 적재. 정확값은 그 테이블을 `query_sql` 로 조회.
 
 > **위키 분류(type) · 그래프 · 외부 항목 import.** 위키 페이지는 **평면 슬러그 + `type` facet**으로 관리한다
 > (폴더 계층 대신 다차원 `[[링크]]` 그래프 + 분류 facet). ingest 시 파일명/내용으로 type 자동추론

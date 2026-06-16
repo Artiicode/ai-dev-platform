@@ -2,6 +2,15 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.35.0] - 2026-06-16
+### Added
+- **Excel 시트별 하이브리드 라우팅(정확도↑, 소실 0).** 표(tabular) 시트는 **`info/db/<파일>.sqlite`
+  테이블**로 적재(값 타입 보존 → 정확 조회·집계 `query_sql`), 서술 시트는 텍스트로, 그리고 컬럼명·
+  미리보기·`query_sql` 포인터를 담은 **위키 카드**(의미검색 발견용)를 함께 생성. `search_all` 의 하이브리드
+  (벡터 recall + SQL 정확값)와 맞물린다 — 의미검색으로 표를 찾고 `query_sql` 로 정확값을 뽑는 흐름.
+  헤더행+다열 데이터 휴리스틱으로 표/서술 자동 분기, 비표 시트는 텍스트 폴백. `extractor.xlsx_sheets()` +
+  router `_ingest_xlsx_tables`/`_xlsx_card`. 다중시트 워크북으로 SQL 정확조회·숫자 집계·발견·서술시트 검증.
+
 ## [0.34.1] - 2026-06-16
 ### Fixed
 - **Excel(.xlsx/.xlsm) 인제스트 — 셀 값 소실 버그.** read-only 워크북에서 셀 **객체**를 문자열화하면
