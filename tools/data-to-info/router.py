@@ -298,9 +298,13 @@ def _process(node_dir, files, archive_dir, md_max, vector_min, dry_run):
                 embedder = _load_embedder()
             wiki.embed_page(node_dir, res_w["slug"], embedder)
             wiki.reindex(node_dir)
-            provenance.record(node_dir, entry_id=name, store="sql+wiki", location=db_rel or res_w["path"],
+            # One schema-valid provenance entry (store/route enums). The wiki card is the discoverable
+            # entry and lists the SQL db/tables/columns + a query_sql pointer; tables also surface via
+            # search_all. (provenance.record dedups by source+sha, so two entries for one xlsx isn't
+            # possible anyway.) route_by keeps the xlsx origin + table count.
+            provenance.record(node_dir, entry_id=name, store="wiki", location=res_w["path"],
                               source=src, tool="router@%s" % __tool_version__,
-                              route="xlsx", route_by="xlsx:%dtab" % ntab)
+                              route="wiki", route_by="xlsx:%dtab" % ntab)
             print("           tables=%s · wiki=%s" % ([t[1] for t in tables], res_w["slug"]))
             try:
                 shutil.move(src, os.path.join(archive_dir, name))
