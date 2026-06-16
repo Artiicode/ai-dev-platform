@@ -2,6 +2,14 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.34.1] - 2026-06-16
+### Fixed
+- **Excel(.xlsx/.xlsm) 인제스트 — 셀 값 소실 버그.** read-only 워크북에서 셀 **객체**를 문자열화하면
+  `<ReadOnlyCell '...'.A4>` 플레이스홀더가 박혀 실제 값이 전부 사라졌다. `extractor._xlsx()` 를 추가하고
+  `ws.iter_rows(values_only=True)` + `data_only=True` 로 **셀 값**을 직접 추출(시트별 표). `.xlsx/.xlsm` 를
+  `SUPPORTED` 에 등록, `openpyxl` 의존성 추가. 임시 워크북으로 추출·ingest·검색까지 실제 값 보존 검증.
+  (기존에 잘못 적재된 노드는 `harness update` 후 `harness rebuild <node>` 로 archives/ 에서 재추출.)
+
 ## [0.34.0] - 2026-06-16
 ### Added
 - **개인 일일 플랜이 오늘 프로젝트 작업을 자동 집계(roll-up).** 그동안 플랫폼 개인 일일 플랜
