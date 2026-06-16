@@ -2,6 +2,17 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.36.1] - 2026-06-17
+### Fixed
+- **xlsx 인제스트가 스키마 위반 provenance 를 기록하던 버그.** 하이브리드 라우팅이
+  `info/index.yaml` 에 `store="sql+wiki"`·`route="xlsx"` 를 적었는데, `info-index.schema.json` 의 enum
+  (`store∈{md,sql,vector,wiki}`, `route∈{sql,rag,wiki}`)에 없어 xlsx 를 적재한 노드는 `validate` 가
+  실패했다(pre-commit/CI 게이트도 거부). `provenance.record` 가 source+sha 로 dedup 하므로 sql/wiki 두
+  엔트리는 불가 → **스키마-유효한 단일 엔트리**(`store="wiki"`, `route="wiki"`, `route_by="xlsx:Ntab"`,
+  location=위키 카드)로 기록. 위키 카드가 SQL db/테이블/컬럼 + `query_sql` 포인터를 담고 `search_all` 이
+  테이블을 노출하므로 정확조회 경로는 그대로. 스크래치 노드 xlsx 인제스트 → validate 통과로 검증.
+  (기존에 xlsx 를 적재한 노드는 `harness rebuild <node>` 로 index.yaml 재생성 필요.)
+
 ## [0.36.0] - 2026-06-16
 ### Changed
 - **워크트리를 `<node>/worktree/<branch>/` 로 — 하나의 공유 노드 허브(ADR 0018).** 기존 `state/wt-<branch>`
