@@ -202,7 +202,10 @@ Windows에서 브라우저로 대화하는 GUI는 **동일 MCP 서버를 재사�
 ## 7. 운영 도구 (락 · 온보딩 · 디버그)
 - **동시성 락:** 여러 에이전트가 같은 노드를 만질 때 `harness lock <name> --ticket T` 로 advisory 락.
   `state/lock.json`에 기록되며, 프로세스 사망/TTL 초과 시 자동 회수. 해제는 `harness unlock`.
-- **작업 격리:** `harness worktree <name> --ticket T` 로 repo 의 git worktree(독립 작업트리/브랜치) 생성.
+- **작업 격리(worktree):** `harness worktree <name> --ticket T [--branch B]` 로 repo 의 git worktree 를
+  **`<node>/worktree/<branch>/`** 에 생성(브랜치별 코드 체크아웃). **노드는 하나(공유 허브)** — 모든 워크트리가
+  그 노드의 `info/context/history/scenario/conventions` 를 **공유**한다(MCP `NODE_DIR`=노드 루트). `worktree/`
+  는 node-git 이 무시(코드라 노드 이력에 안 들어감). 워크트리 안에서 `harness <cmd>` 를 돌려도 노드로 자동 resolve.
 - **온보딩 자동화:** `harness onboard <name>` — worklog/adr/info/manifest 를 스캔해 ONBOARDING.md 재생성.
 - **이력 자동 인계(수동 onboard 불필요):** `history/ONBOARDING.md`(큐레이션 인계서)가 이력이 바뀔 때마다
   자동 재생성됩니다 — MCP `append_worklog`/`record_decision`/`ingest_data`, `harness verify`. 브리프는
