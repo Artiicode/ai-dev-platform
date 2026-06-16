@@ -52,7 +52,7 @@ source .venv/bin/activate
 bash scripts/setup.sh && source .venv/bin/activate     # 의존성 + tesseract + .env
 ./harness init my_proj --link-type path                # 새 프로젝트 노드
 # 이미 로컬에 있는 프로젝트를 심볼릭 링크로 연결(복제 없이 참조):
-./harness init my_proj --link-type symlink --target /home/yong/ai/my_proj
+./harness init my_proj --link-type symlink --target /abs/path/to/my_proj
 ./harness bootstrap projects/my_proj-node              # repo/ 심링크 생성
 cp ~/data/*  projects/my_proj-node/data/update/        # 아무 포맷 투입
 ./harness ingest my_proj                               # 추출→md/sql/vector

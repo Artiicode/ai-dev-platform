@@ -2,12 +2,45 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.35.0] - 2026-06-16
+### Added
+- **Excel 시트별 하이브리드 라우팅(정확도↑, 소실 0).** 표(tabular) 시트는 **`info/db/<파일>.sqlite`
+  테이블**로 적재(값 타입 보존 → 정확 조회·집계 `query_sql`), 서술 시트는 텍스트로, 그리고 컬럼명·
+  미리보기·`query_sql` 포인터를 담은 **위키 카드**(의미검색 발견용)를 함께 생성. `search_all` 의 하이브리드
+  (벡터 recall + SQL 정확값)와 맞물린다 — 의미검색으로 표를 찾고 `query_sql` 로 정확값을 뽑는 흐름.
+  헤더행+다열 데이터 휴리스틱으로 표/서술 자동 분기, 비표 시트는 텍스트 폴백. `extractor.xlsx_sheets()` +
+  router `_ingest_xlsx_tables`/`_xlsx_card`. 다중시트 워크북으로 SQL 정확조회·숫자 집계·발견·서술시트 검증.
+
+## [0.34.1] - 2026-06-16
+### Fixed
+- **Excel(.xlsx/.xlsm) 인제스트 — 셀 값 소실 버그.** read-only 워크북에서 셀 **객체**를 문자열화하면
+  `<ReadOnlyCell '...'.A4>` 플레이스홀더가 박혀 실제 값이 전부 사라졌다. `extractor._xlsx()` 를 추가하고
+  `ws.iter_rows(values_only=True)` + `data_only=True` 로 **셀 값**을 직접 추출(시트별 표). `.xlsx/.xlsm` 를
+  `SUPPORTED` 에 등록, `openpyxl` 의존성 추가. 임시 워크북으로 추출·ingest·검색까지 실제 값 보존 검증.
+  (기존에 잘못 적재된 노드는 `harness update` 후 `harness rebuild <node>` 로 archives/ 에서 재추출.)
+
+## [0.34.0] - 2026-06-16
+### Added
+- **개인 일일 플랜이 오늘 프로젝트 작업을 자동 집계(roll-up).** 그동안 플랫폼 개인 일일 플랜
+  (`<ROOT>/standup`)과 프로젝트 작업 이력(노드 `history/worklog`·`history/standup`)이 별개 파일이라,
+  에이전트가 프로젝트에서 남긴 진행이 일일 플랜에 안 보이고 사용자의 `add-task` 만 보였다. 이제
+  `harness standup`(노드 생략=개인 플랜) 출력에 모든 `projects/*-node` 의 **오늘 worklog/standup 진행을
+  `## [프로젝트 진행]` 섹션으로 집계**(읽기 전용·소급, 노드별 그룹·시각 태그). `standup.project_rollup()`
+  추가. 에이전트는 `append_worklog`/노드 standup 만 남기면 일일 플랜에 자동 반영(플랫폼 플랜에 따로 쓸 필요 없음).
+
+## [0.33.2] - 2026-06-15
+### Changed
+- **환경/머신 의존 절대경로를 추적 파일에서 제거** — `README.md`(symlink 예시 `--target`), toolkit manifest
+  `origin`, `session.py` 주석, CHANGELOG 의 사용자 홈 절대경로·머신 고유 env 스크립트 언급을 일반 placeholder
+  (`/abs/path/to/...`, 상대표기, `.bashrc/.zshrc`)로 치환. 공개 템플릿 repo 에 특정 PC/사용자 의존 데이터가
+  새지 않도록 한다(원칙: 절대경로/머신 고유 값은 커밋 금지 — 예시는 placeholder, 실값은 `.env`/로컬 미추적).
+
 ## [0.33.1] - 2026-06-15
 ### Fixed
 - **`harness start` 좌측 claude pane 이 invocation dir 에서 실행**되도록 수정. tmux `-c workdir` 는 시작
-  디렉토리만 정하는데, 인터랙티브 셸 rc(`.bashrc`→`devtools-env.sh` 등)가 그 뒤 cd 해버려 claude 가
-  엉뚱한 경로(`/home/yong` 등)에서 떴다. send-keys 로 `cd <workdir> &&` 를 prepend 해 rc 이후에 각 pane 을
-  invocation dir 로 고정(좌=claude 포함 dev 윈도우 전 pane).
+  디렉토리만 정하는데, 인터랙티브 셸 rc(`.bashrc`/`.zshrc` 또는 source 되는 env 스크립트)가 그 뒤 cd
+  해버려 claude 가 홈 등 엉뚱한 경로에서 떴다. send-keys 로 `cd <workdir> &&` 를 prepend 해 rc 이후에 각
+  pane 을 invocation dir 로 고정(좌=claude 포함 dev 윈도우 전 pane).
 - **CI(validate-nodes) green 복구** — "AGENTS.md 정본 최신화 확인" 스텝이 최근 푸시들에서 실패했다.
   원인은 AGENTS.md 가 `gen_agent_rules` 생성물인데 기능 추가분이 AGENTS.md 에 직접 편집돼 생성기와
   어긋난 것(0.33.0 에서 정본 이관으로 해소). 재생성 결과가 커밋본과 일치함을 로컬에서 확인.

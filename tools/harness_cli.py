@@ -249,6 +249,8 @@ def cmd_standup(a):
         standup.set_summary(base, a.today, a.tomorrow, name, a.date); did = True
     if a.show or not did:
         sys.stdout.write(standup.show(base, a.date, ensure=True, name=name) or "(없음)\n")
+        if not a.node:                       # personal daily plan: roll up today's project activity
+            sys.stdout.write(standup.project_rollup(ROOT, a.date))
     return 0
 
 

@@ -151,6 +151,70 @@ def _image_card(node_dir, src, name, text, sha):
     return "\n".join(lines) + "\n"
 
 
+def _sanitize(s, fallback):
+    out = "".join(c if c.isalnum() else "_" for c in str(s)).strip("_")
+    return out or fallback
+
+
+def _ingest_xlsx_tables(node_dir, base, sheets):
+    """Tabular sheets → one sqlite per workbook (info/db/<base>.sqlite), a table per sheet.
+    Returns [(sheet_title, table, columns, nrows, preview_rows)]. Numbers kept numeric."""
+    db_path = os.path.join(node_dir, "info", "db", _sanitize(base, "book") + ".sqlite")
+    tables, db, used = [], None, set()
+    for sh in (s for s in sheets if s["tabular"]):
+        header = sh["rows"][0]
+        ncols = max((i + 1 for i, c in enumerate(header) if c is not None and str(c).strip()), default=0)
+        cols = []
+        for i in range(ncols):
+            h = header[i] if i < len(header) else None
+            cn = _sanitize(h if h is not None and str(h).strip() else "", "col%d" % (i + 1))
+            while cn in cols:
+                cn += "_"
+            cols.append(cn)
+        tname = _sanitize(sh["title"], "sheet")
+        while tname in used:
+            tname += "_"
+        used.add(tname)
+        if db is None:
+            os.makedirs(os.path.dirname(db_path), exist_ok=True)
+            db = sqlite3.connect(db_path)
+        col_defs = ", ".join('"%s"' % c for c in cols)
+        ph = ", ".join("?" for _ in cols)
+        db.execute('DROP TABLE IF EXISTS "%s"' % tname)
+        db.execute('CREATE TABLE "%s" (%s)' % (tname, col_defs))
+        data = []
+        for r in sh["rows"][1:]:
+            vals = [(r[i] if i < len(r) else None) for i in range(ncols)]
+            vals = [v if isinstance(v, (int, float)) or v is None else str(v) for v in vals]
+            data.append(vals)
+        db.executemany('INSERT INTO "%s" (%s) VALUES (%s)' % (tname, col_defs, ph), data)
+        preview = [cols] + [["" if v is None else str(v) for v in row] for row in data[:5]]
+        tables.append((sh["title"], tname, cols, len(data), preview))
+    if db:
+        db.commit(); db.close()
+    return os.path.relpath(db_path, node_dir) if tables else None, tables
+
+
+def _xlsx_card(name, db_rel, base, tables, text_sheets):
+    """Discoverable wiki body: column names + small preview (vector recall) + query_sql pointer
+    for exact values; free-form sheets inline as text."""
+    L = ["원본 파일: %s (Excel)" % name, ""]
+    if tables:
+        L.append("## 표 시트 → SQL (정확값은 `query_sql` 로 조회)")
+        for title, tname, cols, n, preview in tables:
+            L.append("- 시트 `%s` → db=`%s` table=`%s` (%d행) · columns: %s"
+                     % (title, os.path.basename(db_rel), tname, n, ", ".join(cols)))
+            L.append("  " + " | ".join(cols))
+            for row in preview[1:]:
+                L.append("  " + " | ".join(row))
+        L.append("")
+        L.append("> 정확한 값/집계는 위 테이블을 `query_sql` 로 조회하라(미리보기는 일부 행).")
+    for sh in text_sheets:
+        L += ["", "## %s" % sh["title"]]
+        L += [" | ".join("" if c is None else str(c).strip() for c in r) for r in sh["rows"]]
+    return "\n".join(L).strip() + "\n"
+
+
 def _ingest_vector(node_dir, doc_id, source_rel, text, embedder):
     import vectorstore
     chunks = vectorstore.chunk_text(text)
@@ -211,6 +275,38 @@ def _process(node_dir, files, archive_dir, md_max, vector_min, dry_run):
         name = os.path.basename(src)
         ext = os.path.splitext(src)[1].lower()
         size = os.path.getsize(src)
+
+        # Excel: hybrid per-sheet — tabular sheets → SQL tables(정확), free-form → text; plus one
+        # discoverable wiki index (columns + preview + query_sql pointer). Multi-output, so handled
+        # here rather than the single-route path below.
+        if ext in extractor.XLSX:
+            sheets, note = extractor.xlsx_sheets(src)
+            if not sheets:
+                print("[router] %-28s [skip] %s (inbox 유지)" % (name, note)); continue
+            ntab = sum(1 for s in sheets if s["tabular"])
+            print("[router] %-28s -> sql+wiki (xlsx: 표 %d/%d시트)" % (name, ntab, len(sheets)))
+            if dry_run:
+                continue
+            base = os.path.splitext(name)[0]
+            db_rel, tables = _ingest_xlsx_tables(node_dir, base, sheets)
+            text_sheets = [s for s in sheets if not s["tabular"]]
+            body = _xlsx_card(name, db_rel, base, tables, text_sheets)
+            sha = provenance.sha256_of(src)
+            res_w = wiki.upsert(node_dir, title=_title_for(name, ""), body=body,
+                                type=_infer_type(name, body), sources=[{"id": name, "sha256": sha}])
+            if embedder is None:
+                embedder = _load_embedder()
+            wiki.embed_page(node_dir, res_w["slug"], embedder)
+            wiki.reindex(node_dir)
+            provenance.record(node_dir, entry_id=name, store="sql+wiki", location=db_rel or res_w["path"],
+                              source=src, tool="router@%s" % __tool_version__,
+                              route="xlsx", route_by="xlsx:%dtab" % ntab)
+            print("           tables=%s · wiki=%s" % ([t[1] for t in tables], res_w["slug"]))
+            try:
+                shutil.move(src, os.path.join(archive_dir, name))
+            except FileNotFoundError:
+                print("           [skip] 원본이 이미 이동됨: %s" % name, file=sys.stderr)
+            continue
 
         # 텍스트 확보(힌트/분류기/길이 판단용): plain 읽기, 문서 추출, 그 외 None
         text = None

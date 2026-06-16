@@ -205,8 +205,8 @@ def start(session="harness", harness=None, skip_perms=None, cwd=None,
         subprocess.run(["tmux", *args], check=True, cwd=ROOT)
 
     def send(pane, cmd):
-        # tmux `-c workdir` only sets the START dir; an interactive shell's rc (.bashrc /
-        # devtools-env.sh etc.) may cd elsewhere afterward. send-keys runs after the shell is
+        # tmux `-c workdir` only sets the START dir; an interactive shell's rc (.bashrc/.zshrc
+        # or sourced env scripts) may cd elsewhere afterward. send-keys runs after the shell is
         # ready, so cd workdir HERE to pin each pane (esp. left=claude) to the invocation dir.
         full = "cd %s && %s" % (shlex.quote(workdir), cmd)
         subprocess.run(["tmux", "send-keys", "-t", pane, full, "Enter"], check=True)

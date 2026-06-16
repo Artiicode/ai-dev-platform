@@ -237,6 +237,7 @@ data/update/<아무 확장자>  ──/update──▶  tools/data-to-info/route
 | 정형 수치/표(로봇암 x,y,z, 센서 로그, BOM) | **SQL** (`info/db/`, SQLite/DuckDB) | 정확한 질의/집계, 스키마 보장 |
 | 코드/설정 | repo와 별개로 요약 md + 심볼 인덱스 | 코드 자체는 repo에 있음 |
 | 이미지(도면, 사진, 스크린샷) | **위키 카드**(`info/wiki/`) + **원본 보존**(`info/assets/`) | OCR 텍스트 + `![](../assets/..)` 참조. 에이전트가 `Read`로 on-demand 시각 열람(비전 캡셔닝 없음). 무-OCR도 skip 안 됨 |
+| Excel(.xlsx/.xlsm) | **시트별 하이브리드**: 표 시트→**SQL**(`info/db/<file>.sqlite` 테이블) + 발견용 **위키 카드**(컬럼·미리보기·`query_sql` 포인터), 서술 시트→텍스트 | 표는 정확 조회/집계(값 타입 보존), 위키는 의미검색 발견 → 정확값은 `query_sql`. 셀 값은 `iter_rows(values_only)` 로 보존(`<ReadOnlyCell>` 버그 방지) |
 
 임계값(`md_max_chars` 등)은 manifest로 오버라이드. 충돌 정보는 **조용히 덮어쓰지 않고** `index.yaml`에
 supersedes 관계로 버전을 남긴다.

@@ -5,7 +5,7 @@ tool:
   name: ai-usage-monitor
   kind: tool
   summary: "Cursor/Claude Code 토큰 사용량·비용 터미널 대시보드 (usage --watch)"
-  origin: /home/yong/code/ai/ai-tools/tool-generator-platform/ai-usage-monitor   # 하드 복사 출처(참고)
+  origin: ai-tools/tool-generator-platform/ai-usage-monitor   # 하드 복사 출처(참고, 상대 표기)
   link:
     type: path          # 코드가 repo/ 안에 직접 존재(하드 복사)
     path: repo

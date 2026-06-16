@@ -100,7 +100,9 @@ cp ~/specs/*.pdf  ~/data/*.json  projects/my_proj-node/data/update/
 ```
 
 라우팅 규칙: 정형(.json/.csv/.tsv)→SQL, 문서는 추출 후 길면 벡터·짧으면 md, 이미지는 `info/assets/` 보존 +
-위키 카드(`![](../assets/..)`)로 항상 적재(무-OCR도 skip 안 됨).
+위키 카드(`![](../assets/..)`)로 항상 적재(무-OCR도 skip 안 됨). **Excel(.xlsx/.xlsm)은 시트별 하이브리드** —
+표 시트는 **SQL 테이블**(`info/db/<파일>.sqlite`, 정확 조회·집계)로, 서술 시트는 텍스트로, 그리고 컬럼·미리보기·
+`query_sql` 포인터를 담은 **위키 카드**(의미검색 발견용)로 적재. 정확값은 그 테이블을 `query_sql` 로 조회.
 
 > **위키 분류(type) · 그래프 · 외부 항목 import.** 위키 페이지는 **평면 슬러그 + `type` facet**으로 관리한다
 > (폴더 계층 대신 다차원 `[[링크]]` 그래프 + 분류 facet). ingest 시 파일명/내용으로 type 자동추론
@@ -280,6 +282,10 @@ source .venv/bin/activate
   보기 `--show`, 목록 `--list`. **노드 생략 = 플랫폼 개인 플랜**(`<루트>/standup/`, subtask 창에 표시);
   `<node>` 지정 = 프로젝트 standup(`history/standup/`, ONBOARDING 에 요약). 오늘 파일이 없으면 **전날
   미완료(`- [ ]`)·내일계획을 오늘로 carry-over**(없으면 "없음").
+  - **개인 일일 플랜은 오늘 각 프로젝트의 작업을 자동 집계**한다: 모든 `projects/*-node` 의 오늘 worklog
+    (`append_worklog`)·노드 standup 진행을 읽어 `## [프로젝트 진행]` 섹션으로 합쳐 보여준다(읽기 전용·소급).
+    따라서 에이전트는 프로젝트 작업을 `append_worklog`/노드 standup 으로만 남기면 일일 플랜에 자동 반영된다
+    — 플랫폼 플랜에 따로 쓸 필요 없다.
 
 ## 10. 하네스 주입 (harness use) — 어떤 AI CLI/IDE든
 핵심 플랫폼은 하네스 중립이고, 쓸 하네스만 옵트인합니다(`platform/harnesses.yaml`). 진입규칙·스킬은

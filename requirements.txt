@@ -14,6 +14,7 @@ litellm>=1.40
 pypdf>=4.0            # .pdf
 python-docx>=1.1      # .docx
 beautifulsoup4>=4.12  # .html
+openpyxl>=3.1         # .xlsx/.xlsm (시트별 표; values_only 로 실제 셀 값 추출)
 pillow>=10.0          # 이미지 로드
 pytesseract>=0.3      # 이미지 OCR — 별도로 tesseract 바이너리 설치 필요
 #   Windows: https://github.com/UB-Mannheim/tesseract/wiki
