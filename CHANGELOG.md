@@ -2,10 +2,19 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.34.0] - 2026-06-16
+### Added
+- **개인 일일 플랜이 오늘 프로젝트 작업을 자동 집계(roll-up).** 그동안 플랫폼 개인 일일 플랜
+  (`<ROOT>/standup`)과 프로젝트 작업 이력(노드 `history/worklog`·`history/standup`)이 별개 파일이라,
+  에이전트가 프로젝트에서 남긴 진행이 일일 플랜에 안 보이고 사용자의 `add-task` 만 보였다. 이제
+  `harness standup`(노드 생략=개인 플랜) 출력에 모든 `projects/*-node` 의 **오늘 worklog/standup 진행을
+  `## [프로젝트 진행]` 섹션으로 집계**(읽기 전용·소급, 노드별 그룹·시각 태그). `standup.project_rollup()`
+  추가. 에이전트는 `append_worklog`/노드 standup 만 남기면 일일 플랜에 자동 반영(플랫폼 플랜에 따로 쓸 필요 없음).
+
 ## [0.33.2] - 2026-06-15
 ### Changed
 - **환경/머신 의존 절대경로를 추적 파일에서 제거** — `README.md`(symlink 예시 `--target`), toolkit manifest
-  `origin`, `session.py` 주석, CHANGELOG 의 `/home/yong`·머신 고유 env 스크립트 언급을 일반 placeholder
+  `origin`, `session.py` 주석, CHANGELOG 의 사용자 홈 절대경로·머신 고유 env 스크립트 언급을 일반 placeholder
   (`/abs/path/to/...`, 상대표기, `.bashrc/.zshrc`)로 치환. 공개 템플릿 repo 에 특정 PC/사용자 의존 데이터가
   새지 않도록 한다(원칙: 절대경로/머신 고유 값은 커밋 금지 — 예시는 placeholder, 실값은 `.env`/로컬 미추적).
 

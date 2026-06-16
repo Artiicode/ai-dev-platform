@@ -167,6 +167,49 @@ def set_summary(base, today=None, tomorrow=None, name="daily", date=None):
     return p
 
 
+def _progress_lines(p):
+    """[진행사항] section non-placeholder bullets of a standup file."""
+    if not os.path.exists(p):
+        return []
+    lines = open(p, encoding="utf-8").read().splitlines()
+    h, e = _section(lines, PROGRESS)
+    if h < 0:
+        return []
+    return [l.strip() for l in lines[h + 1:e]
+            if l.strip().startswith("- ") and l.strip() not in (_PH_PROGRESS, _NONE)]
+
+
+def project_rollup(root, date=None):
+    """Aggregate TODAY's project activity across all project nodes into one section, so the
+    personal daily plan reflects what agents did in projects (worklog + node standup). Read-only.
+
+    Source of truth is each node's history/ (worklog `- [<iso>] ...`, standup [진행사항]); the
+    plan view rolls them up — agents need not write to the platform plan directly."""
+    date = date or _today()
+    proj = os.path.join(root, "projects")
+    if not os.path.isdir(proj):
+        return ""
+    out = []
+    for nd in sorted(glob.glob(os.path.join(proj, "*-node"))):
+        if os.path.basename(nd) == "_template-node":
+            continue
+        name = _node_name(nd)
+        items = list(_progress_lines(path(node_base(nd), date)))      # node standup [진행사항]
+        wl = os.path.join(nd, "history", "worklog")
+        for f in sorted(glob.glob(os.path.join(wl, "*.md"))):          # today's worklog entries
+            ticket = os.path.basename(f)[:-3]
+            for l in open(f, encoding="utf-8"):
+                m = re.match(r"\s*-\s*\[(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})[^\]]*\]\s*(.+)", l)
+                if m and m.group(1) == date:
+                    items.append("- [%s] (%s) %s" % (m.group(2), ticket, m.group(3).strip()))
+        if items:
+            out.append("### %s" % name)
+            out.extend(items)
+    if not out:
+        return ""
+    return "\n## [프로젝트 진행] (자동 집계 — %s)\n%s\n" % (date, "\n".join(out))
+
+
 def show(base, date=None, ensure=False, name="daily"):
     if ensure:
         _ensure(base, name, date)
