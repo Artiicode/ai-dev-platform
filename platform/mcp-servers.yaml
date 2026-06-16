@@ -6,26 +6,26 @@
 #   실제 값은 루트 `.env`(gitignored)에 넣는다 — 예: JIRA_API_TOKEN=xxxx
 #   `harness mcp` 가 외부 서버를 tools/mcp_launch.py 로 감싸 기동하므로, 서버는 .env 를 자동
 #   주입받는다(셸 export 불필요·재부팅에도 유지·단일 소스). 값에 #/공백이 있으면 .env 에서 따옴표.
-#
-# 아래 servers 는 예시 골격이다 — 실제 패키지명/인자는 각 MCP 서버 문서에 맞게 조정하라.
 servers:
-  jira:
+  # Jira(+Confluence/Compass): Atlassian 공식 Rovo Remote MCP (OAuth 2.1).
+  #   mcp-remote 프록시가 첫 실행 시 브라우저 OAuth 로그인 → 토큰 캐시(~/.mcp-auth). env 불필요.
+  #   엔드포인트는 v1/mcp/authv2 (구 v1/sse 는 2026-06-30 지원 종료). 공식 서버는 Bitbucket 미지원.
+  atlassian:
     command: npx
-    args: ["-y", "mcp-jira"]
-    env:
-      JIRA_URL: ${JIRA_URL}
-      JIRA_API_TOKEN: ${JIRA_API_TOKEN}
-  figma:
-    command: npx
-    args: ["-y", "figma-developer-mcp", "--stdio"]
-    env:
-      FIGMA_API_KEY: ${FIGMA_API_KEY}
-  bitbucket:
-    command: npx
-    args: ["-y", "mcp-bitbucket"]
-    env:
-      BITBUCKET_USERNAME: ${BITBUCKET_USERNAME}
-      BITBUCKET_APP_PASSWORD: ${BITBUCKET_APP_PASSWORD}
+    args: ["-y", "mcp-remote", "https://mcp.atlassian.com/v1/mcp/authv2"]
 
-# 사용할 외부 MCP 만 켠다(비우면 substrate 만). 예: enabled: ["jira", "figma"]
-enabled: []
+  # Bitbucket Cloud: 공식 원격 MCP 미지원 → 로컬 서버(aashari) 사용.
+  #   앱 패스워드는 2026-06 폐기 예정이라 최신 방식(API 토큰)을 사용한다.
+  #   시크릿(ATLASSIAN_USER_EMAIL / ATLASSIAN_API_TOKEN)은 .env.mcp(미추적)에 있고
+  #   tools/mcp_with_env.sh 래퍼가 로드한다 → 평문 토큰이 추적 파일/생성 설정에 남지 않는다.
+  bitbucket:
+    command: tools/mcp_with_env.sh
+    args: ["npx", "-y", "@aashari/mcp-server-atlassian-bitbucket"]
+
+  # Figma: Framelink figma-developer-mcp. FIGMA_API_KEY 는 .env.mcp 에서 래퍼가 로드.
+  figma:
+    command: tools/mcp_with_env.sh
+    args: ["npx", "-y", "figma-developer-mcp", "--stdio"]
+
+# 사용할 외부 MCP 만 켠다(비우면 substrate 만).
+enabled: ["atlassian", "bitbucket", "figma"]
