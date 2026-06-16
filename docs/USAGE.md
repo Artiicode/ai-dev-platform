@@ -282,10 +282,11 @@ source .venv/bin/activate
   보기 `--show`, 목록 `--list`. **노드 생략 = 플랫폼 개인 플랜**(`<루트>/standup/`, subtask 창에 표시);
   `<node>` 지정 = 프로젝트 standup(`history/standup/`, ONBOARDING 에 요약). 오늘 파일이 없으면 **전날
   미완료(`- [ ]`)·내일계획을 오늘로 carry-over**(없으면 "없음").
-  - **개인 일일 플랜은 오늘 각 프로젝트의 작업을 자동 집계**한다: 모든 `projects/*-node` 의 오늘 worklog
-    (`append_worklog`)·노드 standup 진행을 읽어 `## [프로젝트 진행]` 섹션으로 합쳐 보여준다(읽기 전용·소급).
-    따라서 에이전트는 프로젝트 작업을 `append_worklog`/노드 standup 으로만 남기면 일일 플랜에 자동 반영된다
-    — 플랫폼 플랜에 따로 쓸 필요 없다.
+  - **개인 일일 플랜은 오늘 각 프로젝트의 "코드 작업"을 compact 하게 자동 집계**한다(`## 오늘 프로젝트 작업`):
+    모든 `projects/*-node` 의 오늘 worklog(`append_worklog`)·노드 standup 을 읽어 노드별로 묶어 보여준다
+    (읽기 전용·소급). **인제스트/provenance/재색인 등 플랫폼·데이터파이프라인 메타는 제외**, 노드당 상한·트림으로
+    간결하게. 따라서 에이전트는 코드 작업을 `append_worklog` 로만 남기면 일일 플랜에 자동 반영된다(플랫폼 플랜에
+    따로 쓸 필요 없음).
 
 ## 10. 하네스 주입 (harness use) — 어떤 AI CLI/IDE든
 핵심 플랫폼은 하네스 중립이고, 쓸 하네스만 옵트인합니다(`platform/harnesses.yaml`). 진입규칙·스킬은

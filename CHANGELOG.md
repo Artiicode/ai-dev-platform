@@ -2,6 +2,14 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.35.1] - 2026-06-16
+### Changed
+- **일일 플랜 프로젝트 집계 — 코드 작업만, compact, 시인성 개선.** roll-up 이 worklog/standup 원시 라인을
+  그대로 나열해 인제스트 등 플랫폼/데이터파이프라인 메타가 섞이고 보기 나빴다. 이제 **플랫폼 메타 제외**
+  (인제스트/provenance/재색인/rebuild/온보딩 재생성/index.yaml 등 휴리스틱 필터), **노드당 상한·길이 트림**,
+  **노드별 그룹 + 빈 줄 + 들여쓰기 불릿**(`[node]` → `- HH:MM (ticket) 요약`)으로 재포맷. 섹션명
+  `## 오늘 프로젝트 작업`. `project_rollup(per_node, width)` + `_is_meta`/`_parse_hm`.
+
 ## [0.35.0] - 2026-06-16
 ### Added
 - **Excel 시트별 하이브리드 라우팅(정확도↑, 소실 0).** 표(tabular) 시트는 **`info/db/<파일>.sqlite`

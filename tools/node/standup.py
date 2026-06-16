@@ -179,35 +179,71 @@ def _progress_lines(p):
             if l.strip().startswith("- ") and l.strip() not in (_PH_PROGRESS, _NONE)]
 
 
-def project_rollup(root, date=None):
-    """Aggregate TODAY's project activity across all project nodes into one section, so the
-    personal daily plan reflects what agents did in projects (worklog + node standup). Read-only.
+# Platform / data-pipeline operations — NOT project code work, so excluded from the daily
+# plan roll-up (the user wants only compact code-level "what was done"). Heuristic, adjustable.
+_ROLLUP_SKIP = (
+    "인제스트", "ingest", "데이터 적재", "info/db", "info/wiki", "info/vector", "data/update",
+    "provenance", "출처 기록", "재색인", "reindex", "rebuild", "재빌드",
+    "온보딩 재생성", "onboarding", "index.yaml", "위키 인덱스",
+)
 
-    Source of truth is each node's history/ (worklog `- [<iso>] ...`, standup [진행사항]); the
-    plan view rolls them up — agents need not write to the platform plan directly."""
+
+def _is_meta(text):
+    t = text.lower()
+    return any(k.lower() in t for k in _ROLLUP_SKIP)
+
+
+def _parse_hm(line):
+    """'- [HH:MM] text' → ('HH:MM', text); else ('', stripped bullet text)."""
+    m = re.match(r"\s*-\s*\[(\d{2}:\d{2})\]\s*(.+)", line)
+    if m:
+        return m.group(1), m.group(2).strip()
+    return "", re.sub(r"^\s*-\s*", "", line).strip()
+
+
+def project_rollup(root, date=None, per_node=6, width=88):
+    """Aggregate TODAY's project CODE work across nodes into a compact, readable section for the
+    personal daily plan. Reads each node's worklog (`- [<iso>] ...`) + standup [진행사항], drops
+    platform/data-pipeline meta (ingestion 등), trims, caps per node. Read-only — agents just log
+    via append_worklog / node standup; the plan rolls it up (no need to write the platform plan)."""
     date = date or _today()
     proj = os.path.join(root, "projects")
     if not os.path.isdir(proj):
         return ""
-    out = []
+    groups = []
     for nd in sorted(glob.glob(os.path.join(proj, "*-node"))):
         if os.path.basename(nd) == "_template-node":
             continue
-        name = _node_name(nd)
-        items = list(_progress_lines(path(node_base(nd), date)))      # node standup [진행사항]
+        items = []                                                    # (hhmm, text)
+        for line in _progress_lines(path(node_base(nd), date)):       # node standup [진행사항]
+            hm, text = _parse_hm(line)
+            if text and not _is_meta(text):
+                items.append((hm, text))
         wl = os.path.join(nd, "history", "worklog")
-        for f in sorted(glob.glob(os.path.join(wl, "*.md"))):          # today's worklog entries
+        for f in sorted(glob.glob(os.path.join(wl, "*.md"))):         # today's worklog entries
             ticket = os.path.basename(f)[:-3]
             for l in open(f, encoding="utf-8"):
                 m = re.match(r"\s*-\s*\[(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})[^\]]*\]\s*(.+)", l)
-                if m and m.group(1) == date:
-                    items.append("- [%s] (%s) %s" % (m.group(2), ticket, m.group(3).strip()))
-        if items:
-            out.append("### %s" % name)
-            out.extend(items)
-    if not out:
+                if m and m.group(1) == date and not _is_meta(m.group(3)):
+                    items.append((m.group(2), "(%s) %s" % (ticket, m.group(3).strip())))
+        seen, uniq = set(), []                                        # dedup, keep latest per node
+        for hm, text in items:
+            if text not in seen:
+                seen.add(text); uniq.append((hm, text))
+        if not uniq:
+            continue
+        uniq.sort(key=lambda x: x[0])
+        shown, more = uniq[-per_node:], len(uniq) - per_node
+        lines = ["[%s]" % _node_name(nd)]
+        for hm, text in shown:
+            text = text if len(text) <= width else text[:width - 1] + "…"
+            lines.append("    - %s%s" % ((hm + "  ") if hm else "", text))
+        if more > 0:
+            lines.append("    … 외 %d건" % more)
+        groups.append("\n".join(lines))
+    if not groups:
         return ""
-    return "\n## [프로젝트 진행] (자동 집계 — %s)\n%s\n" % (date, "\n".join(out))
+    return "\n## 오늘 프로젝트 작업 (자동 집계 · %s)\n\n%s\n" % (date, "\n\n".join(groups))
 
 
 def show(base, date=None, ensure=False, name="daily"):
