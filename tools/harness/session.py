@@ -10,6 +10,7 @@ with a numbered-input fallback when stdin/stdout aren't a TTY. Machine-local cho
 from __future__ import annotations
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -174,6 +175,11 @@ def _panes(session):
 
 def start(session="harness", harness=None, skip_perms=None, cwd=None,
           use_tmux=True, attach=True):
+    # tmux forbids '.' and ':' in session names (they're the window.pane / session:window
+    # target separators) and silently rewrites them to '_' at create time. Mirror that here so
+    # every later `-t <session>` target resolves to the real session instead of being mis-parsed
+    # as a pane spec — e.g. `new-window -t els2.0` would fail with "can't specify pane here".
+    session = re.sub(r"[.:]", "_", session)
     cfg = _load_cfg()
     h = _choose_harness(cfg, harness)
     # Wire the chosen harness's entry rules/skills (idempotent) via the CLI — no import coupling.
