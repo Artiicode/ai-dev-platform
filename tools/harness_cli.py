@@ -22,6 +22,8 @@
   lock       노드 advisory 락 획득/상태
   unlock     노드 락 해제
   worktree   ticket용 git worktree 생성
+  verify     conventions/verify.yaml 체크 실행
+  loop       자율 검증 루프(headless 하네스 1패스→verify→통과까지 반복; worktree 격리)
 
 노드 인자는 이름(my_proj) 또는 경로(projects/my_proj-node) 둘 다 허용.
 """
@@ -308,8 +310,10 @@ def cmd_use(a):
     cfg = known[a.harness] or {}
     print("[use] '%s' wired — entry rules (%s) + skills projected."
           % (a.harness, cfg.get("rules_file", "?")))
-    print("[use] MCP gateway (optional, harness-specific): copy adapters/mcp.example.json "
-          "into this harness's MCP config and set NODE_DIR — see docs/USAGE.md.")
+    if cfg.get("mcp_config"):
+        print("[use] MCP 게이트웨이(이력 인계 begin_session·search_info 등)를 쓰려면:\n"
+              "        ./harness mcp %s --node <node>   # %s 자동 생성/병합"
+              % (a.harness, cfg.get("mcp_config")))
     return 0
 
 
@@ -499,6 +503,15 @@ def cmd_verify(a):
     return rc
 
 
+def cmd_loop(a):
+    """자율 검증 루프: worktree 격리 안에서 설정된 하네스를 headless 로 돌리고 verify 로 채점,
+    통과까지 반복(가드: max-iters/무진전/timeout). 안쪽 agent loop 는 하네스가, 바깥 루프는 플랫폼이."""
+    import loop
+    node = resolve_node(a.node)
+    return loop.run(node, a.ticket, spec=a.spec, max_iters=a.max_iters, timeout=a.timeout,
+                    base=a.base, harness=a.harness, commit=not a.no_commit, dry=a.dry_run)
+
+
 def cmd_webgui(a):
     import subprocess
     node = resolve_node(a.node)
@@ -643,6 +656,18 @@ def build_parser():
     p.set_defaults(fn=cmd_rebuild)
 
     p = sub.add_parser("verify"); p.add_argument("node"); p.set_defaults(fn=cmd_verify)
+
+    p = sub.add_parser("loop", help="자율 검증 루프: headless 하네스 1패스→verify 채점→통과까지 반복(worktree 격리)")
+    p.add_argument("node")
+    p.add_argument("--ticket", required=True, help="작업 티켓/브랜치 식별자")
+    p.add_argument("--spec", default=None, help="구현 스펙(문자열). 생략 시 직전 verify 실패 해소가 목표")
+    p.add_argument("--max-iters", type=int, default=5, help="반복 상한(무한루프 가드)")
+    p.add_argument("--timeout", type=int, default=1200, help="패스당 headless 호출 벽시계 한도(초)")
+    p.add_argument("--base", default="HEAD", help="worktree 분기 기준(기본 HEAD)")
+    p.add_argument("--harness", default=None, help="기본값 무시하고 하네스 지정(headless 레시피 필요)")
+    p.add_argument("--no-commit", action="store_true", help="통과해도 worktree 브랜치에 커밋하지 않음")
+    p.add_argument("--dry-run", action="store_true", help="worktree 준비 + 1패스 프롬프트만 미리보기")
+    p.set_defaults(fn=cmd_loop)
 
     p = sub.add_parser("webgui"); p.add_argument("node")
     p.add_argument("--port", type=int, default=8800); p.add_argument("--host", default="127.0.0.1")

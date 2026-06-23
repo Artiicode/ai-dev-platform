@@ -30,6 +30,29 @@ def create(repo, branch, wt_path, base="HEAD", dry=False):
     return os.path.abspath(wt_path)
 
 
+def ensure(repo, branch, wt_path, base="HEAD", dry=False):
+    """Idempotent create: reuse the worktree dir if it already exists, attach to an existing
+    branch when one exists, otherwise create a fresh branch. Used by `harness loop` so re-runs
+    of the same ticket continue in the same isolated checkout instead of erroring."""
+    if not is_git_repo(repo):
+        print("[worktree] git repo 아님: %s (no-op)" % repo)
+        return None
+    wt_abs = os.path.abspath(wt_path)
+    if os.path.isdir(wt_abs):
+        return wt_abs                                   # reuse existing checkout
+    has_branch = subprocess.run(["git", "-C", repo, "rev-parse", "--verify", "--quiet", branch],
+                                capture_output=True).returncode == 0
+    add = ["git", "-C", repo, "worktree", "add"]
+    add += ([wt_abs, branch] if has_branch else ["-b", branch, wt_abs, base])
+    if dry:
+        print("  $ " + " ".join(add))
+        return wt_abs
+    os.makedirs(os.path.dirname(wt_abs), exist_ok=True)
+    if _run(add, dry) != 0:
+        return None
+    return wt_abs
+
+
 def remove(repo, wt_path, dry=False):
     if not is_git_repo(repo):
         return False

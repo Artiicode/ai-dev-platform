@@ -30,13 +30,18 @@ def _load_checks(node_dir):
         print("[verify] verify.yaml 파싱 실패: %s" % e, file=sys.stderr); return []
 
 
-def run(node_dir):
+def run(node_dir, repo_dir=None):
+    """conventions/verify.yaml 체크를 실행한다.
+
+    repo_dir 를 주면 그 디렉토리를 코드 작업트리로 본다(예: worktree/<branch>) — harness loop 가
+    격리된 worktree 를 검증할 때 사용. 미지정 시 노드의 repo/ 를 검증(기존 동작).
+    리포트는 항상 노드의 state/verify-report.md 한 곳에 쓴다(루프가 단일 위치에서 읽음)."""
     checks = _load_checks(node_dir)
     if checks is None:
         print("[verify] conventions/verify.yaml 없음 — 검증 항목 미정의(스킵)"); return 0
     if not checks:
         print("[verify] 정의된 체크 없음"); return 0
-    repo = os.path.join(node_dir, "repo")
+    repo = repo_dir or os.path.join(node_dir, "repo")
     results = []
     for c in checks:
         name, cmd = c.get("name", "?"), c.get("cmd", "")
