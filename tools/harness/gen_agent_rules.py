@@ -16,7 +16,7 @@
 정본은 AUTO-GENERATED 헤더가 붙으며 재생성으로 덮어쓴다(수동 편집 금지).
 """
 from __future__ import annotations
-import argparse, os, shutil, sys
+import argparse, glob, os, shutil, sys
 
 __tool_version__ = "0.3.0"
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/ 의 부모
@@ -130,7 +130,7 @@ def _platform_body() -> str:
 | "Jira 티켓/PR 목록 위키에 넣어줘" | 소스 도구(Jira MCP·`gh`)로 JSON/TSV 추출 → `./harness import <node> <file> --type ticket`(key/status/url 프론트매터 위키 페이지로 변환·임베딩) |
 | "테스트/검증 돌려줘" | `./harness verify <node>` (결과는 자동으로 ONBOARDING 에 반영 + 노드 git 자동 커밋) |
 | "노드 변경분 저장/커밋해줘" | `./harness save <node> -m "<요약>"` (노드 메타 git 커밋; `/repo` 는 외부 관리라 제외). ingest/onboard/verify·MCP 쓰기는 자동 커밋되므로 보통 직접 편집분만 |
-| "오늘 할 일 추가 / 스탠드업" | 할일 `./harness standup --add-task "<할 일>"`(또는 `/add-task`) · 진행 `--add "<항목>"` · 요약 `--today/--tomorrow` · 보기 `--show`. **노드 생략=플랫폼 개인 일일 플랜**(`harness start` 의 subtask 창), `<node>` 지정=프로젝트 standup. 전날 미완료(`- [ ]`)·내일계획은 오늘로 자동 carry-over, 비면 "없음". **개인 일일 플랜은 오늘 각 프로젝트의 "코드 작업"을 compact 하게 자동 집계**(`오늘 프로젝트 작업` 섹션; 인제스트/재색인 등 플랫폼 메타는 제외) — 그러니 프로젝트 코드 작업은 `append_worklog`(또는 `harness standup <node> --add`)로만 남기면 일일 플랜에 자동 반영된다(플랫폼 플랜에 따로 쓸 필요 없음) |
+| "오늘 할 일 추가 / 스탠드업" | 할일 `./harness standup --add-task "<할 일>"`(또는 `/add-task`) · 진행 `--add "<항목>"` · 요약 `--today/--tomorrow` · 보기 `--show`. **노드 생략=플랫폼 개인 일일 플랜**(`harness start` 의 subtask 창), `<node>` 지정=프로젝트 standup. 전날 미완료(`- [ ]`)·내일계획은 오늘로 자동 carry-over, 비면 "없음". **개인 일일 플랜은 오늘 각 프로젝트의 "코드 작업"을 compact 하게 자동 집계**(`오늘 프로젝트 작업` 섹션; 인제스트/재색인 등 플랫폼 메타는 제외) — 그러니 프로젝트 코드 작업은 `append_worklog`(또는 `harness standup <node> --add`)로만 남기면 일일 플랜에 자동 반영된다(플랫폼 플랜에 따로 쓸 필요 없음). **이 자동 집계는 개인 일일 플랜에만 read-only 로 붙는다 — 프로젝트 노드 standup 파일의 `[진행사항]`엔 자동으로 쓰이지 않으며, 그건 `harness standup <node> --add` 로만 채워진다. worklog 타임스탬프는 UTC 저장이지만 집계·표시는 시스템 로컬 타임존($TZ)으로 변환된다** |
 | "사용량/토큰 비용 보여줘 (usage)" | `./harness tool ai-usage-monitor -- --watch` (번들 도구; `toolkit/` 참고) |
 | "작업 세션/tmux 띄워줘" | `./harness start [세션이름]` (window `dev`: 좌 claude/우상 치트시트+셸/우하 usage + window `subtask`: 오늘 플랜; 하네스·claude 권한을 화살표 메뉴로 골라 `.harness-local.json` 에 저장. claude 는 harness 실행 디렉토리에서 실행, `--cwd` 로 변경) |
 | "플랫폼 업데이트 받아줘" | `./harness update` (ff 가능하면 fast-forward, 분기 시 머지). **충돌(rc=3, `CONFLICT:` 출력) 시 너가 직접** 각 파일의 `<<<<<<< ======= >>>>>>>` 마커를 해결(상류 패치는 반드시 반영) → `git add` → `git commit --no-edit` → `harness verify`/`validate` → **무엇이 자동 해결됐고 무엇이 사람 확인 필요인지 유저에게 보고**. **공통 조상 없음(상류 force-push 재작성, rc=3) 안내 시**: 로컬 플랫폼 커밋이 없으면 `./harness update --resync`(HEAD 백업 후 origin 으로 reset; 노드/데이터는 미추적이라 안전) |
@@ -141,7 +141,40 @@ def _platform_body() -> str:
 """
 
 
-def _node_body(node_name: str) -> str:
+def scenario_hw_index(node_dir: str) -> str:
+    """노드에 실존하는 scenario/*.md·scenario/test/*·hw/*.md 를 열거한 마크다운 인덱스.
+
+    진입 규칙이 특정 파일명을 하드코딩하지 않도록, '실제로 있는' 플레이북/타겟 문서를
+    동적으로 나열한다. 파일 부재는 graceful — 아무 것도 없으면 빈 문자열을 돌려준다.
+    gen-rules 시점(정적 주입)과 begin_session(실시간 주입) 양쪽에서 공유한다.
+    """
+    def _rel(paths):
+        return sorted(os.path.relpath(p, node_dir).replace(os.sep, "/") for p in paths)
+
+    scen_dir = os.path.join(node_dir, "scenario")
+    hw_dir = os.path.join(node_dir, "hw")
+    scenarios = []
+    if os.path.isdir(scen_dir):
+        scenarios += glob.glob(os.path.join(scen_dir, "*.md"))
+        scenarios += glob.glob(os.path.join(scen_dir, "test", "**", "*.md"), recursive=True)
+    targets = glob.glob(os.path.join(hw_dir, "*.md")) if os.path.isdir(hw_dir) else []
+    if not scenarios and not targets:
+        return ""
+
+    lines = ["## 이 노드의 플레이북/타겟 문서 (자동 발견)"]
+    if scenarios:
+        lines.append("- **scenario/** — 작업 유형(빌드/디버그/배포/테스트)에 맞는 플레이북을 읽는다:")
+        lines += ["  - `%s`" % r for r in _rel(scenarios)]
+    if targets:
+        lines.append("- **hw/** — 배포/디버그/빌드/온디바이스 작업 시 타겟 접속·배포 레이아웃을 읽는다"
+                     "(시크릿은 이름참조):")
+        lines += ["  - `%s`" % r for r in _rel(targets)]
+    return "\n".join(lines)
+
+
+def _node_body(node_name: str, node_dir: str | None = None) -> str:
+    index = scenario_hw_index(node_dir) if node_dir else ""
+    index_block = ("\n" + index + "\n") if index else ""
     return f"""# {node_name} — 노드 작업 규칙 (강제)
 
 이 디렉토리는 `{node_name}` 프로젝트의 **AI 운영 노드**다. **이 프로젝트의 소프트웨어 코드는 이 노드의
@@ -151,8 +184,11 @@ AI 파일(프롬프트/컨텍스트/이력/info)을 두지 않는다.
 ## 진입 순서 (반드시)
 1. `history/ONBOARDING.md` — 현재 상태/활성 티켓/최근 결정/알려진 이슈.
 2. `conventions/coding/`, `conventions/lint/`, `conventions/static_analysis/` — 코드 규칙.
-3. `scenario/debug.md`, `scenario/test/` — 디버그/테스트 플레이북.
-4. `info/`(md/db/vector) + `info/index.yaml` — 사실/데이터와 출처.
+3. `scenario/` 의 관련 플레이북 전부(예: `debug.md`, `deploy.md`, `test/` 등)를 작업
+   유형(코딩/디버그/배포/테스트)에 맞게 읽는다. 아래 "자동 발견" 인덱스 참고.
+4. 배포/디버그/빌드/온디바이스 작업 시 `hw/<target>.md`(타겟 접속·배포 레이아웃; 시크릿은 이름참조)를 읽는다.
+5. `info/`(md/db/vector) + `info/index.yaml` — 사실/데이터와 출처.
+{index_block}
 
 ## 기록 (반드시)
 - 진행 경과: `history/worklog/<티켓>.md` (append-only).
@@ -199,7 +235,7 @@ def generate(node: str | None = None):
         if not os.path.isdir(nd):
             print("[gen-rules] 노드 없음: %s" % nd, file=sys.stderr); return 1
         print("[gen-rules] 노드 %s:" % node)
-        for path, note in _write(nd, _node_body(node), " --node %s" % node):
+        for path, note in _write(nd, _node_body(node, nd), " --node %s" % node):
             print("  - %-40s %s" % (path, note))
     return 0
 

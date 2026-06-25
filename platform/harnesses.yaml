@@ -11,6 +11,11 @@ harnesses:
     skills_dir:   .claude/skills       # <slug>/SKILL.md
     commands_dir: .claude/commands     # <slug>.md
     mcp_config:   .mcp.json            # `harness mcp claude-code` 병합 대상(미추적)
+    # `harness loop` 가 안쪽 agent loop 를 돌릴 때 쓰는 비대화형(headless) 호출 레시피.
+    # 프롬프트는 stdin 으로 전달된다(아래 args 에는 프롬프트를 넣지 않음).
+    # 격리된 worktree 안에서 실행되므로 acceptEdits 로 파일수정 자동승인. 완전 자율이 필요하면
+    # ["claude","-p","--dangerously-skip-permissions"] 로 바꿀 수 있다(주의).
+    headless:     ["claude", "-p", "--permission-mode", "acceptEdits"]
   cursor:
     rules_file:   .cursorrules
     skills_dir:   .cursor/skills

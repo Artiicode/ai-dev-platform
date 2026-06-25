@@ -201,6 +201,24 @@ def _parse_hm(line):
     return "", re.sub(r"^\s*-\s*", "", line).strip()
 
 
+def _local_date_hm(stamp):
+    """Worklog ISO 타임스탬프(예: '2026-06-24T23:43:23.978393Z')를 **시스템 로컬 타임존**으로
+    변환해 (local_date_iso, 'HH:MM') 반환. 'Z'(UTC)·오프셋 표기 인식, tz 없는 naive 는 UTC 로 간주.
+    파싱 불가면 None. 로컬 타임존은 시스템 설정($TZ)을 따른다(astimezone()).
+    저장은 UTC 정본으로 두고 표시 시점에만 로컬로 렌더한다."""
+    s = stamp.strip()
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    try:
+        dt = datetime.datetime.fromisoformat(s)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:                                   # naive == UTC (현 writer 가 UTC 발행)
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
+    local = dt.astimezone()                                 # 시스템 로컬 tz ($TZ 존중)
+    return local.date().isoformat(), local.strftime("%H:%M")
+
+
 def project_rollup(root, date=None, per_node=6, width=88):
     """Aggregate TODAY's project CODE work across nodes into a compact, readable section for the
     personal daily plan. Reads each node's worklog (`- [<iso>] ...`) + standup [진행사항], drops
@@ -223,9 +241,12 @@ def project_rollup(root, date=None, per_node=6, width=88):
         for f in sorted(glob.glob(os.path.join(wl, "*.md"))):         # today's worklog entries
             ticket = os.path.basename(f)[:-3]
             for l in open(f, encoding="utf-8"):
-                m = re.match(r"\s*-\s*\[(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})[^\]]*\]\s*(.+)", l)
-                if m and m.group(1) == date and not _is_meta(m.group(3)):
-                    items.append((m.group(2), "(%s) %s" % (ticket, m.group(3).strip())))
+                m = re.match(r"\s*-\s*\[([^\]]+)\]\s*(.+)", l)        # capture full ISO stamp
+                if not m:
+                    continue
+                conv = _local_date_hm(m.group(1))                     # UTC→로컬 (KST 오전 작업 보존)
+                if conv and conv[0] == date and not _is_meta(m.group(2)):
+                    items.append((conv[1], "(%s) %s" % (ticket, m.group(2).strip())))
         seen, uniq = set(), []                                        # dedup, keep latest per node
         for hm, text in items:
             if text not in seen:
