@@ -56,11 +56,22 @@ def _now():
 
 
 def _rules_text():
+    base = "(규칙 파일 없음 — `python tools/harness/gen_agent_rules.py` 실행 필요)"
     for cand in (os.path.join(NODE_DIR, "AGENTS.md"),
                  os.path.join(NODE_DIR, "..", "..", "platform", "prompts", "global-system.md")):
         if os.path.exists(cand):
-            return open(cand, encoding="utf-8").read()
-    return "(규칙 파일 없음 — `python tools/harness/gen_agent_rules.py` 실행 필요)"
+            base = open(cand, encoding="utf-8").read()
+            break
+    # 노드의 scenario/*.md·hw/*.md 를 실시간 열거해 신선한 인덱스를 덧붙인다 — gen-rules 를 다시
+    # 돌리지 않아도 새 플레이북/타겟 문서가 다음 세션부터 자동 노출된다(파일 부재는 graceful).
+    try:
+        import gen_agent_rules
+        idx = gen_agent_rules.scenario_hw_index(NODE_DIR)
+        if idx and idx not in base:
+            base = base.rstrip() + "\n\n" + idx + "\n"
+    except Exception:
+        pass
+    return base
 
 
 def _secret_in(text):
