@@ -231,12 +231,23 @@ def start(session="harness", harness=None, skip_perms=None, cwd=None,
     # Two explicit modes for an existing session:
     #   default ("재사용" / resume, like `claude -r`): attach to it, keep its state.
     #   --fresh: tear it down and rebuild from scratch.
-    if _has_session(session):
-        if not fresh:
-            print("[start] 기존 tmux 세션 재사용(attach): %s   (완전히 새로 만들려면 --fresh)" % session)
-            return subprocess.call(["tmux", "attach", "-t", "=%s" % session]) if attach else 0
-        print("[start] --fresh: 기존 세션 종료 후 재생성: %s" % session)
+    hold = None
+    if fresh:
+        # Pin the tmux server UP with a throwaway holder BEFORE touching `session`, so it survives
+        # every kill below. Why: with an auto-restore plugin (tmux-continuum `@continuum-restore on`)
+        # the server resurrects the saved `session` on EVERY server start — including the start that
+        # our own new-session would trigger when no server is running. Killing the last session then
+        # exits the server, the next command restarts it, and the restore brings `session` back, so
+        # new-session loops on 'duplicate session' forever. The holder absorbs that one-shot restore
+        # and keeps the server alive thereafter, so once it settles our kill+recreate wins for good.
+        hold = "_harness_hold_%d" % os.getpid()
+        subprocess.run(["tmux", "new-session", "-d", "-s", hold], capture_output=True, cwd=ROOT)
+        if _has_session(session):
+            print("[start] --fresh: 기존 세션 종료 후 재생성: %s" % session)
         _kill_session(session)
+    elif _has_session(session):
+        print("[start] 기존 tmux 세션 재사용(attach): %s   (완전히 새로 만들려면 --fresh)" % session)
+        return subprocess.call(["tmux", "attach", "-t", "=%s" % session]) if attach else 0
 
     usage_cmd = "%s %s tool ai-usage-monitor -- --watch 5" % (_py(), HARNESS_CLI)
 
@@ -250,22 +261,29 @@ def start(session="harness", harness=None, skip_perms=None, cwd=None,
         full = "cd %s && %s" % (shlex.quote(workdir), cmd)
         subprocess.run(["tmux", "send-keys", "-t", pane, full, "Enter"], check=True)
 
-    # Layout: left | right(top / bottom) — all panes start in workdir. Window name = "dev".
-    # new-session can still hit a 'duplicate session' race (e.g. a just-killed last session whose
-    # server is mid-shutdown, so the has-session check above saw 'none'). Resolve it instead of
-    # crashing: without --fresh a live duplicate just means "reuse it" (attach); with --fresh,
-    # force-kill and retry once.
+    # Create the session, resolving a 'duplicate session' race. Two sources: (1) killing the last
+    # session tears the server down asynchronously, so a quick new-session hits the still-dying
+    # server; (2) an auto-restore plugin re-creates `session` (possibly a beat after the holder
+    # started the server). In --fresh the holder above keeps the server alive, so re-killing and
+    # retrying converges once the one-shot restore settles; in default mode a persistent duplicate
+    # means a live session → reuse it (attach).
     rc, err = _new_session(session, workdir)
-    if rc != 0:
-        if "duplicate session" in err and not fresh:
+    tries = 0
+    while rc != 0 and "duplicate session" in err:
+        if not fresh:
             print("[start] 동일 이름 세션이 이미 있음 → 재사용(attach): %s" % session)
             return subprocess.call(["tmux", "attach", "-t", "=%s" % session]) if attach else 0
-        if "duplicate session" in err:                 # --fresh: stale leftover — kill and retry
-            _kill_session(session)
-            rc, err = _new_session(session, workdir)
-        if rc != 0:
-            sys.stderr.write("[start] tmux 세션 생성 실패: %s\n" % err.strip())
-            return 2
+        if tries >= 25:                                 # ~5s grace for teardown/auto-restore, then give up
+            break
+        tries += 1
+        _kill_session(session)                          # kill + wait for the name to clear
+        time.sleep(0.2)                                 # let teardown / restore settle between rounds
+        rc, err = _new_session(session, workdir)
+    if hold:                                            # drop the keep-alive holder now that the
+        subprocess.run(["tmux", "kill-session", "-t", "=%s" % hold], capture_output=True)  # real
+    if rc != 0:                                         # session exists (the server stays up on it)
+        sys.stderr.write("[start] tmux 세션 생성 실패: %s\n" % err.strip())
+        return 2
     p_left = _panes(session)[0]
     tmux("split-window", "-h", "-t", p_left, "-c", workdir)        # left | right
     p_right = [p for p in _panes(session) if p != p_left][0]
