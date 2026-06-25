@@ -236,7 +236,8 @@ def cmd_start(a):
     import session
     skip = True if a.skip_perms else (False if a.no_skip_perms else None)
     return session.start(session=a.session, harness=a.harness, skip_perms=skip,
-                         cwd=a.cwd, use_tmux=not a.no_tmux, attach=not a.no_attach)
+                         cwd=a.cwd, use_tmux=not a.no_tmux, attach=not a.no_attach,
+                         fresh=a.fresh)
 
 
 def cmd_standup(a):
@@ -578,6 +579,8 @@ def build_parser():
     p.add_argument("--cwd", default=None, help="claude 를 실행할 디렉토리(미지정 시 선택/기본값)")
     p.add_argument("--no-tmux", action="store_true", help="tmux 없이 claude 만 실행")
     p.add_argument("--no-attach", action="store_true", help="세션만 구성하고 attach 안 함(테스트/원격)")
+    p.add_argument("--fresh", "--new", action="store_true", dest="fresh",
+                   help="같은 이름 세션이 있으면 종료 후 새로 만든다(기본은 기존 세션 재사용=attach)")
     p.set_defaults(fn=cmd_start)
 
     p = sub.add_parser("standup", help="일 단위 스탠드업/할일 로그(<날짜>.md). 노드 생략 시 플랫폼 개인 일일 플랜")
