@@ -19,6 +19,7 @@ harnesses:
   cursor:
     rules_file:   .cursorrules
     skills_dir:   .cursor/skills
+    commands_dir: .cursor/commands     # <slug>.md (claude-code 와 동일 커맨드 패리티)
     mcp_config:   .cursor/mcp.json     # `harness mcp cursor` 병합 대상(미추적)
   gemini:
     rules_file:   GEMINI.md

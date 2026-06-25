@@ -10,10 +10,12 @@ with a numbered-input fallback when stdin/stdout aren't a TTY. Machine-local cho
 from __future__ import annotations
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
 import sys
+import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LOCAL = os.path.join(ROOT, ".harness-local.json")
@@ -172,8 +174,39 @@ def _panes(session):
     return out
 
 
+def _has_session(session):
+    # Exact match ('=') so 'els2' doesn't prefix-match an unrelated 'els20' (tmux -t is prefix/
+    # fnmatch by default), which would wrongly attach to — or skip creating — the wrong session.
+    return subprocess.run(["tmux", "has-session", "-t", "=%s" % session],
+                          capture_output=True).returncode == 0
+
+
+def _kill_session(session):
+    """Kill the session and wait until the server confirms it's gone. Killing the *last* session
+    makes the tmux server start shutting down, so a follow-up new-session can still race its
+    leftover state ('duplicate session'); polling here makes recreation deterministic."""
+    subprocess.run(["tmux", "kill-session", "-t", "=%s" % session], capture_output=True)
+    for _ in range(40):                       # up to ~2s
+        if not _has_session(session):
+            return
+        time.sleep(0.05)
+
+
+def _new_session(session, workdir):
+    """tmux new-session (detached). Returns (returncode, stderr) instead of raising, so the caller
+    can resolve the duplicate-session race (attach vs. kill-and-retry) rather than crash."""
+    r = subprocess.run(["tmux", "new-session", "-d", "-s", session, "-n", "dev", "-c", workdir],
+                       capture_output=True, text=True, cwd=ROOT)
+    return r.returncode, (r.stderr or "")
+
+
 def start(session="harness", harness=None, skip_perms=None, cwd=None,
-          use_tmux=True, attach=True):
+          use_tmux=True, attach=True, fresh=False):
+    # tmux forbids '.' and ':' in session names (they're the window.pane / session:window
+    # target separators) and silently rewrites them to '_' at create time. Mirror that here so
+    # every later `-t <session>` target resolves to the real session instead of being mis-parsed
+    # as a pane spec — e.g. `new-window -t els2.0` would fail with "can't specify pane here".
+    session = re.sub(r"[.:]", "_", session)
     cfg = _load_cfg()
     h = _choose_harness(cfg, harness)
     # Wire the chosen harness's entry rules/skills (idempotent) via the CLI — no import coupling.
@@ -195,9 +228,15 @@ def start(session="harness", harness=None, skip_perms=None, cwd=None,
         sys.stderr.write("[start] tmux 미설치 — `sudo apt-get install tmux` 후 다시 시도(또는 --no-tmux).\n")
         return 2
 
-    if subprocess.run(["tmux", "has-session", "-t", session], capture_output=True).returncode == 0:
-        print("[start] 기존 tmux 세션 attach: %s" % session)
-        return subprocess.call(["tmux", "attach", "-t", session]) if attach else 0
+    # Two explicit modes for an existing session:
+    #   default ("재사용" / resume, like `claude -r`): attach to it, keep its state.
+    #   --fresh: tear it down and rebuild from scratch.
+    if _has_session(session):
+        if not fresh:
+            print("[start] 기존 tmux 세션 재사용(attach): %s   (완전히 새로 만들려면 --fresh)" % session)
+            return subprocess.call(["tmux", "attach", "-t", "=%s" % session]) if attach else 0
+        print("[start] --fresh: 기존 세션 종료 후 재생성: %s" % session)
+        _kill_session(session)
 
     usage_cmd = "%s %s tool ai-usage-monitor -- --watch 5" % (_py(), HARNESS_CLI)
 
@@ -212,7 +251,21 @@ def start(session="harness", harness=None, skip_perms=None, cwd=None,
         subprocess.run(["tmux", "send-keys", "-t", pane, full, "Enter"], check=True)
 
     # Layout: left | right(top / bottom) — all panes start in workdir. Window name = "dev".
-    tmux("new-session", "-d", "-s", session, "-n", "dev", "-c", workdir)
+    # new-session can still hit a 'duplicate session' race (e.g. a just-killed last session whose
+    # server is mid-shutdown, so the has-session check above saw 'none'). Resolve it instead of
+    # crashing: without --fresh a live duplicate just means "reuse it" (attach); with --fresh,
+    # force-kill and retry once.
+    rc, err = _new_session(session, workdir)
+    if rc != 0:
+        if "duplicate session" in err and not fresh:
+            print("[start] 동일 이름 세션이 이미 있음 → 재사용(attach): %s" % session)
+            return subprocess.call(["tmux", "attach", "-t", "=%s" % session]) if attach else 0
+        if "duplicate session" in err:                 # --fresh: stale leftover — kill and retry
+            _kill_session(session)
+            rc, err = _new_session(session, workdir)
+        if rc != 0:
+            sys.stderr.write("[start] tmux 세션 생성 실패: %s\n" % err.strip())
+            return 2
     p_left = _panes(session)[0]
     tmux("split-window", "-h", "-t", p_left, "-c", workdir)        # left | right
     p_right = [p for p in _panes(session) if p != p_left][0]
@@ -234,7 +287,9 @@ def start(session="harness", harness=None, skip_perms=None, cwd=None,
 
     print("[start] tmux '%s': [dev] 좌=claude(%s)/우상=치트시트+셸/우하=usage  ·  [subtask] 오늘 플랜"
           % (session, workdir))
+    print("[start] 나중에 이어서: C-b d 로 분리(detach) → `harness start %s` 가 다시 attach(재사용). "
+          "완전히 새로: `harness start %s --fresh`." % (session, session))
     if attach:
-        return subprocess.call(["tmux", "attach", "-t", session])
+        return subprocess.call(["tmux", "attach", "-t", "=%s" % session])
     print("[start] attach: tmux attach -t %s" % session)
     return 0

@@ -14,6 +14,7 @@ route → 물리 store 매핑 (Phase 1):
 from __future__ import annotations
 import argparse
 import csv
+import io
 import json
 import os
 import shutil
@@ -66,6 +67,18 @@ __tool_version__ = "0.3.0"
 STRUCTURED = routing.STRUCTURED
 
 
+def _read_text(src):
+    """텍스트를 인코딩 폴백으로 읽는다(UTF-8 → cp1252 → latin-1).
+    Windows Excel CSV 등 비-UTF8 파일에서 UnicodeDecodeError 로 죽지 않게 한다."""
+    raw = open(src, "rb").read()
+    for enc in ("utf-8-sig", "cp1252", "latin-1"):
+        try:
+            return raw.decode(enc)
+        except UnicodeDecodeError:
+            continue
+    return raw.decode("utf-8", errors="replace")
+
+
 def _rows_from_json(obj):
     if isinstance(obj, list):
         return [r for r in obj if isinstance(r, dict)]
@@ -84,10 +97,10 @@ def _ingest_sql(src, node_dir):
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     ext = os.path.splitext(src)[1].lower()
     if ext == ".json":
-        rows = _rows_from_json(json.load(open(src, encoding="utf-8")))
+        rows = _rows_from_json(json.loads(_read_text(src)))
     else:
         delim = "\t" if ext == ".tsv" else ","
-        rows = list(csv.DictReader(open(src, encoding="utf-8"), delimiter=delim))
+        rows = list(csv.DictReader(io.StringIO(_read_text(src)), delimiter=delim))
     if not rows:
         return "info/db/%s.sqlite (empty)" % name
     cols = list({k for r in rows for k in r.keys()})

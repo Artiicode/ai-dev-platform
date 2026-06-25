@@ -1,5 +1,6 @@
 # secrets — 절대 커밋 금지
 .env
+.env.*
 *.key
 *.pem
 **/secrets/**
@@ -22,7 +23,8 @@ CLAUDE.md
 GEMINI.md
 .cursorrules
 **/copilot-instructions.md
-.claude/
+.claude/*
+!.claude/settings.json
 .cursor/
 
 # 인스턴스 wiring(미추적): 어떤 노드를 MCP로 띄울지는 사용자별. 중립 예시는 adapters/mcp.example.json
