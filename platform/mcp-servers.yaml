@@ -27,5 +27,5 @@ servers:
     command: tools/mcp_with_env.sh
     args: ["npx", "-y", "figma-developer-mcp", "--stdio"]
 
-# 사용할 외부 MCP 만 켠다(비우면 substrate 만).
+# 사용할 외부 MCP 만 켠다(비우면 substrate 만). 예: enabled: ["atlassian", "figma"]
 enabled: ["atlassian", "bitbucket", "figma"]
