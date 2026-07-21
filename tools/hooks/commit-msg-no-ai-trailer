@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Starfish / project repos: strip + reject AI attribution trailers only.
+# Does NOT require Conventional Commits (ticket subjects like "SW-369 …" are OK).
+set -euo pipefail
+msg_file="$1"
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+STRIP="$HERE/strip-ai-trailers.sh"
+# Prefer sibling (when both installed into .git/hooks), else platform tree.
+if [ ! -x "$STRIP" ]; then
+  STRIP="/home/yong/code/ai/ai-dev-platform/tools/hooks/strip-ai-trailers.sh"
+fi
+if [ -x "$STRIP" ]; then
+  "$STRIP" "$msg_file"
+fi
+
+if grep -Eiq '^[[:space:]]*(Co-Authored-By|Co-authored-by|Made-with|Made-With)[[:space:]]*:' "$msg_file" \
+  || grep -Eiq '^[[:space:]]*Generated with[[:space:]]+' "$msg_file"; then
+  echo "[commit-msg] AI/tool attribution trailers are forbidden." >&2
+  echo "  remove: Co-Authored-By / Co-authored-by / Made-with / Generated with …" >&2
+  exit 1
+fi
+exit 0

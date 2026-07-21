@@ -10,7 +10,8 @@ status: living
 | 행동 | 게이트 | 비고 |
 |---|---|---|
 | 원격 호스트 실행(ssh/scp run) | 필수 | scenario/debug 의 실행 단계 |
-| git push / 원격 반영 | 필수 | 로컬 commit은 정책에 따라 자동 가능 |
+| git push / 원격 반영 | 필수 | 로컬 commit은 가능. push는 **"push"/"올려"/"push해"** 등 명시 동사 + 채팅 승인. "이력 보이게"만으로는 불가. `request_approval` 단독 불충분 |
+| git force-push | 필수(별도) | 일반 push 승인과 별개로 명시적 force-push 승인 필요 |
 | 프로덕션 배포 | 필수 | 비프로덕션도 권장 |
 | 파일/디렉토리 삭제 | 필수 | 특히 archives/, repo/ |
 | 시크릿 접근/해석 | 필수 + 감사 로그 | 이름→값 해석 시점 기록 |

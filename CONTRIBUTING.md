@@ -26,8 +26,6 @@
 <type>: <한 줄 요약>
 
 <본문(선택)>
-
-Co-Authored-By: ...
 ```
 
 | type | 의미 |
@@ -48,7 +46,20 @@ Co-Authored-By: ...
   USAGE/ADR 등)는 별도. 요약은 명령형·간결하게.
 - **`commit-msg` 훅이 형식을 강제**한다(`harness install-hooks`로 설치). 위반 시 커밋 거부 — 일회 우회는 `git commit --no-verify`.
 - 플랫폼 변경은 `CHANGELOG.md`(무엇), 설계 결정은 `docs/adr/`(왜)에 기록하고 커밋 본문에서 참조.
-- 위험·비자명 변경은 본문에 이유를. `Co-Authored-By` trailer 유지.
+- 위험·비자명 변경은 본문에 이유를.
+- **AI 시그니처 트레일러 금지:** 커밋 메시지/PR 본문에 `Co-Authored-By:` /
+  `Co-authored-by:` / `Made-with:` / `Generated with …` 등 AI·도구 귀속 문구를
+  **넣지 않는다**. Claude Code는 `.claude/settings.json`의
+  `includeCoAuthoredBy: false` + `attribution.commit/pr: ""` 로 강제하고,
+  Cursor는 Settings → Agents → Attribution 끄기 +
+  `~/.cursor/cli-config.json`의 `attribution.attributeCommitsToAgent` /
+  `attributePRsToAgent` 를 `false` 로 둔다. Git 훅이 트레일러를 **제거**하고
+  남아 있으면 거부한다(`prepare-commit-msg` / `commit-msg` / `post-commit`).
+  외부 프로젝트(starfish 등): `python3 tools/harness/install_project_git_hooks.py <repo>`.
+- **운영 규칙 정본은 하네스 중립:** Claude/Cursor/Gemini 공통 규칙은
+  `platform/prompts/global-system.md`(→ `AGENTS.md`)와 `platform/policies/`에만 둔다.
+  Cursor 전용 `.cursor/rules/*.mdc`에만 쓰지 않는다(ADR 0019). `.cursor/`·`CLAUDE.md`
+  심링크 등 하네스 투영물은 `.gitignore`(미추적).
 - 커밋 전 `harness validate` 통과(노드 변경 시). pre-commit 훅이 자동 검사.
 
 예: `feat: routing v2 — semantic route (sql|rag|wiki)`, `chore: tidy example node`, `fix: info-index store enum`.

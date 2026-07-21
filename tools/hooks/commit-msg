@@ -1,8 +1,30 @@
 #!/usr/bin/env bash
-# Conventional Commits enforcement (ai-autodev-harness). See CONTRIBUTING.md.
-# Installed by `harness install-hooks`. Subject must be: <type>: <summary>
+# Strip AI attribution trailers, then enforce Conventional Commits (platform repo).
+# See CONTRIBUTING.md. Installed by `harness install-hooks`.
 set -euo pipefail
 msg_file="$1"
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+STRIP="$HERE/strip-ai-trailers.sh"
+if [ ! -x "$STRIP" ]; then
+  # Installed copy may live only under .git/hooks — prefer platform tools/ if present.
+  ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  if [ -n "$ROOT" ] && [ -x "$ROOT/tools/hooks/strip-ai-trailers.sh" ]; then
+    STRIP="$ROOT/tools/hooks/strip-ai-trailers.sh"
+  fi
+fi
+if [ -x "$STRIP" ]; then
+  "$STRIP" "$msg_file"
+fi
+
+# Hard reject if anything remains (strip helper missing / bypassed).
+if grep -Eiq '^[[:space:]]*(Co-Authored-By|Co-authored-by|Made-with|Made-With)[[:space:]]*:' "$msg_file" \
+  || grep -Eiq '^[[:space:]]*Generated with[[:space:]]+' "$msg_file"; then
+  echo "[commit-msg] AI/tool attribution trailers are forbidden." >&2
+  echo "  remove: Co-Authored-By / Co-authored-by / Made-with / Generated with …" >&2
+  echo "  see:    CONTRIBUTING.md" >&2
+  exit 1
+fi
 
 # First non-empty, non-comment line = the subject.
 subject="$(grep -vE '^[[:space:]]*#' "$msg_file" | grep -vE '^[[:space:]]*$' | head -1 || true)"

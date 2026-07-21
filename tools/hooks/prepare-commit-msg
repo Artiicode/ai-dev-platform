@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Strip AI/tool attribution trailers before the commit message is finalized.
+set -euo pipefail
+STRIP="$(cd "$(dirname "$0")" && pwd)/strip-ai-trailers.sh"
+if [ ! -x "$STRIP" ]; then
+  STRIP="/home/yong/code/ai/ai-dev-platform/tools/hooks/strip-ai-trailers.sh"
+fi
+[ -x "$STRIP" ] || exit 0
+exec "$STRIP" "$1"

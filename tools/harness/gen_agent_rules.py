@@ -18,7 +18,7 @@
 from __future__ import annotations
 import argparse, glob, os, shutil, sys
 
-__tool_version__ = "0.3.0"
+__tool_version__ = "0.3.1"
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/ 의 부모
 sys.path.insert(0, os.path.join(ROOT, "tools", "lib"))
 import registry  # platform/harnesses.yaml (활성 하네스만)
@@ -99,15 +99,20 @@ def _platform_body() -> str:
 - 변환기는 `tools/data-to-info/`에 두고 `tools/README.md` 규칙을 따른다.
 
 ## 3. 작업 진입 절차
-1) 노드 `history/ONBOARDING.md` 읽기 → 2) `conventions/coding/` 읽기 →
-3) plan → verify → implement → 4) 경과를 `history/worklog/<티켓>.md`에 기록 →
-5) 위험행동(ssh/scp/push/deploy/삭제)은 `platform/policies/approval-gates.md` 게이트 통과.
+0) 기판 MCP가 있으면 **`begin_session(agent, ticket?)` 먼저** → `session_token` + `onboarding` 확보
+   (쓰기 도구는 토큰 필수). MCP 없으면 `history/ONBOARDING.md` 직접 읽기 →
+1) `conventions/coding/` 읽기 → 2) plan → verify → implement →
+3) 경과·결정은 MCP `append_worklog` / `record_decision`(또는 동등 CLI)로 기록 →
+4) 위험행동(ssh/scp/push/deploy/삭제)은 `platform/policies/approval-gates.md` 게이트 통과.
 
 > **이력 자동 인계:** `history/ONBOARDING.md`는 worklog·ADR·**repo 커밋**·**verify 테스트 결과**를
 > 모아 자동 생성되는 큐레이션 인계서다. MCP `begin_session` 이 이를 반환하고, `append_worklog`/
 > `record_decision`/`ingest`/`harness verify`/`onboard` 시 자동 갱신된다. **새 에이전트는 이걸로 이전
 > 이력을 인계받으므로, 너의 진행 경과(`append_worklog`)·결정(`record_decision`)을 반드시 남겨라 —
-> 안 남기면 다음 에이전트가 못 본다.**
+> 안 남기면 다음 에이전트가 못 본다. 채팅 로그만으로는 기판 이력이 되지 않는다.**
+>
+> **스킬/커맨드:** 정본은 `platform/skills|commands/`(ADR 0009). `.claude/`·`.cursor/`는 투영본일 뿐
+> 통째 `.agent` 심링크가 아니다(ADR 0019). 관련 작업 시 투영된 `SKILL.md`/커맨드를 읽어 따른다.
 
 ## 4. 검증 (커밋 전 필수)
 `python tools/node/validate_node.py <node>` 통과해야 한다(pre-commit 훅이 자동 실행, CI에서도 검사).
@@ -175,11 +180,21 @@ def scenario_hw_index(node_dir: str) -> str:
 def _node_body(node_name: str, node_dir: str | None = None) -> str:
     index = scenario_hw_index(node_dir) if node_dir else ""
     index_block = ("\n" + index + "\n") if index else ""
+    # Embed global rules so begin_session / node CLAUDE.md / .cursorrules carry the same
+    # harness-neutral musts (push gate, no AI trailers, …) without relying on agents
+    # separately opening the platform-root AGENTS.md (ADR 0019).
+    global_rules = _global_rules()
     return f"""# {node_name} — 노드 작업 규칙 (강제)
 
 이 디렉토리는 `{node_name}` 프로젝트의 **AI 운영 노드**다. **이 프로젝트의 소프트웨어 코드는 이 노드의
 `repo/` 안에서만 작성·수정한다**(플랫폼 루트/현재 디렉토리에 만들지 말 것). 반대로 `repo/`(실제 코드)에는
 AI 파일(프롬프트/컨텍스트/이력/info)을 두지 않는다.
+
+## 플랫폼 공통 규칙 (모든 하네스 — 강제)
+진실원본: `platform/prompts/global-system.md` + `platform/policies/`.
+Cursor 전용 `.mdc` / Claude 전용 설정에만 두지 않는다(ADR 0019).
+
+{global_rules}
 
 ## 진입 순서 (반드시)
 1. `history/ONBOARDING.md` — 현재 상태/활성 티켓/최근 결정/알려진 이슈.
@@ -195,7 +210,7 @@ AI 파일(프롬프트/컨텍스트/이력/info)을 두지 않는다.
 - 비자명 결정: `history/adr/`.
 - 데이터 업데이트: `data/update/`에 투입 후 `harness ingest {node_name}`.
 
-플랫폼 전역 규칙은 루트 `AGENTS.md`를 따른다. (재생성: `python tools/harness/gen_agent_rules.py --node {node_name}`)
+플랫폼 루트 상세·플레이북 표는 루트 `AGENTS.md`를 따른다. (재생성: `python3 tools/harness/gen_agent_rules.py --node {node_name}`)
 """
 
 

@@ -2,6 +2,27 @@
 형식: [Keep a Changelog](https://keepachangelog.com) · 버전: SemVer.
 플랫폼 변경은 여기, "왜"는 docs/adr/.
 
+## [0.36.3] - 2026-07-21
+### Added
+- **AI 시그니처 트레일러 방지 훅.** `tools/hooks/{prepare-commit-msg,commit-msg-no-ai-trailer,post-commit,strip-ai-trailers.sh}`
+  + `tools/harness/install_project_git_hooks.py`(외부 프로젝트 repo, 예: starfish, 에 설치).
+### Fixed
+- **`install_project_git_hooks.py`가 기존 `core.hooksPath`를 무시하던 버그.** 프로젝트가 이미
+  자체 훅 디렉토리(예: starfish `tools/git-hooks/`)로 `core.hooksPath`를 지정해 두면, git이 그
+  경로만 읽으므로 기본 `<git-common-dir>/hooks`에 설치해도 조용히 무시됐다(AI 트레일러 방지가
+  전혀 동작하지 않음). 이제 기존 `core.hooksPath`를 감지하면 로컬 전용 통합 디렉토리
+  (`<git-common-dir>/ai-dev-platform-hooks`, 미추적)를 만들어 프로젝트의 기존 훅(예: astyle
+  pre-commit)을 체이닝하면서 AI 트레일러 훅을 추가하고, `core.hooksPath`를 그 디렉토리로 재설정한다.
+  재실행해도 안전(마커 파일로 원본 경로를 기억해 자기 자신을 체이닝하지 않음).
+
+## [0.36.2] - 2026-07-14
+### Changed
+- **세션 핸드셰이크를 하네스 중립 규칙으로 흡수.** `begin_session`·`session_token`·스킬 투영 안내를
+  `platform/prompts/global-system.md`와 `AGENTS.md` §3에 명시. Cursor 전용
+  `.cursor/rules/harness-begin-session.mdc`는 제거(정본은 AGENTS.md).
+### Docs
+- **ADR 0019:** `.claude`/`.cursor` 전체를 `.agent`에 심링크하는 안 기각 — ADR 0009 투영 모델 유지.
+
 ## [0.36.1] - 2026-06-17
 ### Fixed
 - **xlsx 인제스트가 스키마 위반 provenance 를 기록하던 버그.** 하이브리드 라우팅이
